@@ -16,13 +16,12 @@ For instructions see https://github.com/BattlesnakeOfficial/starter-snake-python
 """
 
 
-if __name__ == "__main__":
-    cherrypy.config.update({"server.socket_host": "0.0.0.0"})
+if __name__ == '__main__':
+    cherrypy.config.update({'server.socket_host': '0.0.0.0'})
     cherrypy.config.update(
-        {"server.socket_port": int(os.environ.get("PORT", "80")),}
+        {'server.socket_port': int(os.environ.get('PORT', '8080')),}
     )
-    cherrypy.config.update({'global': {'engine.autoreload.on': False}})
-    print("Starting Battlesnake Server...")
+    print('Starting Battlesnake Server...')
     cherrypy.tree.mount(Samuel(), '/samuel')
     cherrypy.tree.mount(Medusa(), '/medusa')
 

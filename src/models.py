@@ -44,6 +44,9 @@ class Coord:
     def from_x_y(cls, x: int, y: int):
         return cls({'x': x, 'y': y})
 
+    def json(self):
+        return {'x': self.x, 'y': self.y}
+
 
 class Tile(Enum):
     OUTSIDE = 0

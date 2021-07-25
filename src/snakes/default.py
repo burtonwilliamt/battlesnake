@@ -34,11 +34,8 @@ class BattlesnakeServer:
     def handle_move(self, data:models.Data) -> models.Direction:
         possible_directions = models.CARDINAL_FOUR
         direction = random.choice(possible_directions)
-        move = models.Move(direction)
 
-        print(f'MOVE: {move}')
-
-        return move.json()
+        return direction
 
     @cherrypy.expose
     @cherrypy.tools.json_in()

@@ -1,6 +1,9 @@
-from typing import Mapping, Iterable
+from typing import Iterable
 
 import src.models as models
+
+from src.planning.simulation import Simulation
+
 
 # When I move, can I win
 # If I move here, can some one make me I lose?
@@ -11,53 +14,11 @@ import src.models as models
 c_f = models.CARDINAL_FOUR
 
 
-class Simulation:
-
-    def __init__(self, board: models.Board):
-        live_snakes = [snk for snk in board.snakes if snk.health > 0]
-        self.snake_ids = [snk.id for snk in live_snakes]
-        self.turn = 0
-        self.healths = {snk.id: snk.health for snk in live_snakes}
-        self.bodies = {snk.id: list(snk.body) for snk in live_snakes}
-        self.turns_alive = {snk.id: 0 for snk in live_snakes}
-
-    @property
-    def healths(self):
-        return self.meta_healths[self.turn]
-
-    @property
-    def bodies(self):
-        return self.meta_bodies[self.turn]
-
-    def do_move(self, snk_id: str, d: models.Direction):
-        pass
-
-    def undo_move(self):
-        pass
-
-    def do_turn(self):
-        pass
-
-    def undo_turn(self):
-        pass
-
-    def get_health(self, snk_id: str) -> int:
-        """If snake is alive, return its health. Otherwise 0.
-
-        Args:
-            snk_id (str): The id of the snake we're inquiring about.
-
-        Returns:
-            int: The health of the snake. 0 if dead.
-        """
-        pass
-
-
 def pack_to_bits(*args, bits=8) -> int:
     max_val = (1 << bits) - 1
     res = 0
     for i, arg in enumerate(reversed(args)):
-        res += max(arg, max_val) * (1 << (bits * i))
+        res += min(arg, max_val) * (1 << (bits * i))
     return res
 
 

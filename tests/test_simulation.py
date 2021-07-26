@@ -1,131 +1,236 @@
 import unittest
-from typing import List, Tuple, Set
+import textwrap
+from typing import Mapping
 
 from src.planning.simulation import Simulation
+from tests.board_builder import BoardBuilder
 import src.models as models
-
-# Board Encoding 1:
-
-# F_ food
-# B* body
-#   BL body, continues left
-#   BR body, continues right
-#   BU body, continues up
-#   BD body, continues down
-# H_ head
-# T* tail
-#   T1 tail one deep
-#   T2 tail two deep
-#   ...
-
-# Board Encoding 2:
-# {letter} is the head of snake with that name
-#   if letter is capital, that means tail has extra segment
-# <|^|v|> is the body. Arrow points towards head
-# * is food
-
-EXAMPLE_BOARD = """
-v......
-va<....
->>^....
-....*..
-.*.....
-..v>>b.
-.......
-"""
-
-FOOD = '*'
-RIGHT = '>'
-LEFT = '<'
-UP = '^'
-DOWN = 'v'
-HEADS = set('a', 'b', 'c', 'd')
-
-
-def str_to_grid(board: str) -> List[List[str]]:
-    rows = [ln for ln in board.splitlines()]
-
-    height = len(rows)
-    width = len(rows[0])
-    for row in rows:
-        if len(row) != width:
-            raise ValueError('All rows must be the same width.')
-
-    # We want rows[0] to be bottom line
-    rows.reverse()
-
-    # rows is in [y][x] format, we need to switch that to [x][y]
-    res = [[None for _ in range(height)] for _ in range(width)]
-    for x in range(width):
-        for y in range(height):
-            res[x][y] = rows[y][x]
-
-    return res
-
-
-def grid_iter(grid: List[List[str]]) -> Tuple[models.Coord, str]:
-    for x, col in enumerate(grid):
-        for y, val in enumerate(col):
-            yield (models.Coord({'x': x, 'y': y}), val)
-
-
-def find_food(grid: List[List[str]]) -> List[models.Coord]:
-    return [coord.json() for coord, val in grid_iter(grid) if val == FOOD]
-
-
-def find_heads(grid: List[List[str]]) -> List[models.Coord]:
-    return [
-        coord.json() for coord, val in grid_iter(grid) if val.lower() in HEADS
-    ]
-
-
-def safe_get(grid: List[List[str]], x: int, y: int) -> str:
-    if len(grid) > x >= 0 and len(grid[x]) > y >= 0:
-        return grid[x][y]
-    return None
-
-
-def find_previous(grid: List[List[str]], coord: models.Coord) -> models.Coord:
-    # If tile points to our current pos then it's the previous segment
-    x = coord.x
-    y = coord.y
-    if safe_get(grid, x + 1, y) == LEFT:
-        return (x + 1, y)
-    elif safe_get(grid, x - 1, y) == RIGHT:
-        return (x - 1, y)
-    elif safe_get(grid, x, y + 1) == DOWN:
-        return (x, y + 1)
-    elif safe_get(grid, x, y - 1) == UP:
-        return (x, y - 1)
-    else:
-        return None
-
-
-#TODO: finish this
-def find_snakes(grid: List[List[str]]) -> List[models.Battlesnake]:
-    snakes = []
-    heads = find_heads(grid)
-    for i, head in enumerate(heads):
-        body = []
-        segment = head
-        while segment:
-            body.append(segment)
-            segment = find_previous(grid, segment[0], segment[1])
-    return snakes
-
-
-def str_to_board(in_str: str) -> models.Board:
-    grid = str_to_grid(in_str.strip())
-    return models.Board({
-        'width': len(grid),
-        'height': len(grid[0]),
-        'food': find_food(grid),
-        'snakes': find_snakes(grid),
-        'hazards': [],
-    })
 
 
 class TestSimulation(unittest.TestCase):
 
+    def setUp(self):
+        board = BoardBuilder(
+            '''
+            v....vv
+            va<..Cv
+            >>^...d
+            .*.....
+            .....*.
+            ...>>b.
+            ''', {
+                'a': 51,
+                'b': 100,
+                'c': 2,
+                'd': 42,
+            }).to_board()
+        self.sim = Simulation(board)
+        self.name_to_id = {}
+        for i, name in enumerate(self.sim.names):
+            self.name_to_id[name] = i
+
+    def sim_to_str(self, sim: Simulation) -> str:
+        grid = [['.' for _ in range(sim.width)] for _ in range(sim.height)]
+
+        # Place food
+        for food in sim.food:
+            grid[food.y][food.x] = '*'
+
+        #Place snakes
+        for snk_id, body in enumerate(sim.bodies):
+            if sim.snake_is_dead(snk_id):
+                continue
+
+            # Place the head of the snake
+            head = body.head()
+            name = sim.names[snk_id]
+            if name.lower() not in BoardBuilder.HEADS:
+                raise ValueError('Snake has invalid testing name')
+            # If two or more tail pieces stacked, uppercase the head
+            if len(body) > 1 and body.current_body[-1] == body.current_body[-2]:
+                grid[head.y][head.x] = name.upper()
+            else:
+                grid[head.y][head.x] = name.lower()
+
+            # Place the rest of the snake
+            previous = None
+            for segment in body.current_body:
+                if previous is not None:
+                    delta = (previous.x - segment.x, previous.y - segment.y)
+                    val = None
+                    if delta == (1, 0):
+                        val = '>'
+                    elif delta == (-1, 0):
+                        val = '<'
+                    elif delta == (0, 1):
+                        val = '^'
+                    elif delta == (0, -1):
+                        val = 'v'
+                    elif delta == (0, 0):
+                        continue
+                    else:
+                        raise ValueError('Body segments aren\'t adjacent')
+                    grid[segment.y][segment.x] = val
+                previous = segment
+
+        # Convert to string
+        return '\n'.join([''.join(row) for row in reversed(grid)])
+
+    def expect_board(
+        self,
+        board_str: str,
+        healths: Mapping[str, int],
+    ):
+        # Check that the board matches
+        # Prevent having to escape the first line of board_str
+        if board_str[0] == '\n':
+            board_str = board_str[1:]
+        actual = self.sim_to_str(self.sim).strip()
+        expected = textwrap.dedent(board_str).strip()
+        self.assertMultiLineEqual(
+            actual,
+            expected,
+            'Simulation has wrong board state.\n'
+            f'Actual:\n{actual}\n\nExpected:\n{expected}',
+        )
+
+        # Check the healths match
+        self.assertEqual(len(self.sim.healths), len(healths),
+                         'Simulation has wrong number of healths')
+        for name, health in healths.items():
+            self.assertEqual(
+                self.sim.healths[self.name_to_id[name]],
+                health,
+                'Simulation health does not match expected.',
+            )
+
     def test_init(self):
-        pass
+        self.expect_board(
+            '''
+            v....vv
+            va<..Cv
+            >>^...d
+            .*.....
+            .....*.
+            ...>>b.
+            ''',
+            {
+                'a': 51,
+                'b': 100,
+                'c': 2,
+                'd': 42,
+            }
+        )
+
+    def test_move(self):
+        self.sim.do_move(self.name_to_id['a'], models.UP)
+        self.sim.do_move(self.name_to_id['b'], models.RIGHT)
+        self.sim.do_move(self.name_to_id['c'], models.DOWN)
+        self.sim.do_move(self.name_to_id['d'], models.DOWN)
+        self.sim.do_turn()
+        self.expect_board(
+            '''
+            .a...v.
+            v^<..vv
+            >>^..cv
+            .*....d
+            .....*.
+            ....>>b
+            ''',
+            {
+                'a': 50,
+                'b': 99,
+                'c': 1,
+                'd': 41,
+            }
+        )
+
+    def test_move_and_undo_move(self):
+        # Do some move
+        self.sim.do_move(self.name_to_id['a'], models.UP)
+        self.sim.do_move(self.name_to_id['b'], models.RIGHT)
+        self.sim.do_move(self.name_to_id['c'], models.DOWN)
+        self.sim.do_move(self.name_to_id['d'], models.DOWN)
+        self.sim.do_turn()
+        self.expect_board(
+            '''
+            .a...v.
+            v^<..vv
+            >>^..cv
+            .*....d
+            .....*.
+            ....>>b
+            ''',
+            {
+                'a': 50,
+                'b': 99,
+                'c': 1,
+                'd': 41,
+            }
+        )
+
+        # Roll it back partially
+        self.sim.undo_turn()
+        self.sim.undo_move(self.name_to_id['d'])
+        self.sim.undo_move(self.name_to_id['c'])
+
+        self.expect_board(
+            '''
+            v....vv
+            va<..Cv
+            >>^...d
+            .*.....
+            .....*.
+            ...>>b.
+            ''',
+            {
+                'a': 51,
+                'b': 100,
+                'c': 2,
+                'd': 42,
+            }
+        )
+
+        # Do something different
+        self.sim.do_move(self.name_to_id['c'], models.LEFT)
+        self.sim.do_move(self.name_to_id['d'], models.LEFT)
+        self.sim.do_turn()
+        self.expect_board(
+            '''
+            .a...v.
+            v^<.c<v
+            >>^..d<
+            .*.....
+            .....*.
+            ....>>b
+            ''',
+            {
+                'a': 50,
+                'b': 99,
+                'c': 1,
+                'd': 41,
+            }
+        )
+
+    def test_eat_food(self):
+        self.sim.do_move(self.name_to_id['a'], models.UP)
+        self.sim.do_move(self.name_to_id['b'], models.UP)
+        self.sim.do_move(self.name_to_id['c'], models.DOWN)
+        self.sim.do_move(self.name_to_id['d'], models.DOWN)
+        self.sim.do_turn()
+        self.expect_board(
+            '''
+            .a...v.
+            v^<..vv
+            >>^..cv
+            .*....d
+            .....B.
+            ....>^.
+            ''',
+            {
+                'a': 50,
+                'b': 100,
+                'c': 1,
+                'd': 41,
+            }
+        )

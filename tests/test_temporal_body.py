@@ -32,9 +32,10 @@ class TestTemporalBody(unittest.TestCase):
         self.tb.add_head(0)
         self.check_equal(self.tb, [0,1,2,3])
 
-    def test_del_head(self):
-        self.tb.del_head()
-        self.check_equal(self.tb, [2,3])
+    def test_undo_add_head(self):
+        self.tb.add_head(0)
+        self.tb.undo_add_head()
+        self.check_equal(self.tb, [1,2,3])
 
     def test_del_tail(self):
         self.tb.del_tail()

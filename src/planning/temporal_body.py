@@ -25,7 +25,7 @@ class TemporalBody:
     def add_head(self, loc: models.Coord):
         self.current_body.insert(0, loc)
 
-    def del_head(self):
+    def undo_add_head(self):
         self.current_body.pop(0)
 
     def del_tail(self):

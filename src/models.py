@@ -40,6 +40,14 @@ class Coord:
         self.x = data['x']
         self.y = data['y']
 
+    def __eq__(self, other):
+        if not isinstance(other, Coord):
+            return False
+        return other.x == self.x and other.y == self.y
+
+    def __repr__(self):
+        return f'<Coord({self.x}, {self.y})>'
+
     @classmethod
     def from_x_y(cls, x: int, y: int):
         return cls({'x': x, 'y': y})

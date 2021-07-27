@@ -136,8 +136,10 @@ class Simulation:
 
     def _reduceSnakeHealth(self):
         for snk_id in self.snake_ids:
-            if not self.snake_is_dead(snk_id):
-                old_health = self._t_health[self.turn][snk_id]
+            old_health = self._t_health[self.turn][snk_id]
+            if self.snake_is_dead(snk_id):
+                self._t_health[self.turn + 1][snk_id] = old_health
+            else:
                 self._t_health[self.turn + 1][snk_id] = old_health - 1
 
     def _undo_reduceSnakeHealth(self):
@@ -169,7 +171,60 @@ class Simulation:
         self._t_food[self.turn + 1].clear()
 
     def _maybeEliminateSnakes(self):
-        pass
+        # Snakes that starve or go out of bounds die first
+        for snk_id in self.snake_ids:
+            # Skip already eliminated snakes
+            if self._snakeIsOutOfHealth(snk_id):
+                continue
+            # Check for bounds
+            elif self._snakeIsOutOfBounds(snk_id):
+                self._t_health[self.turn + 1][snk_id] = 0
+
+        # All remaining eliminations happen simultaneously
+        # This is so that eliminated snakes cause others to be eliminated
+        collisions = []
+        for snk_id in self.snake_ids:
+            # Skip dead snakes
+            if self._t_health[self.turn + 1][snk_id] == 0:
+                continue
+            # Check for body
+            elif self._snakeHasBodyCollided(snk_id):
+                collisions.append(snk_id)
+            # Check for head_to_head
+            elif self._snakeHasLostHeadToHead(snk_id):
+                collisions.append(snk_id)
+
+        # Kill snakes that collided
+        for snk_id in collisions:
+            self._t_health[self.turn + 1][snk_id] = 0
+
+    def _snakeIsOutOfHealth(self, snk_id:int):
+        return self._t_health[self.turn + 1][snk_id] == 0
+
+    def _snakeIsOutOfBounds(self, snk_id:int):
+        x = self.bodies[snk_id].head().x
+        y = self.bodies[snk_id].head().y
+        return not 0 <= x < self.width or not 0 <= y < self.height
+
+    def _snakeHasBodyCollided(self, snk_id:int):
+        x = self.bodies[snk_id].head().x
+        y = self.bodies[snk_id].head().y
+        for other_id, body in enumerate(self.bodies):
+            if other_id == snk_id:
+                continue
+            for segment in body.current_body[1:]:
+                if x == segment.x and y == segment.y:
+                    return True
+        return False
+
+    def _snakeHasLostHeadToHead(self, snk_id:int):
+        this_body = self.bodies[snk_id]
+        for other_id, body in enumerate(self.bodies):
+            if other_id == snk_id:
+                continue
+            if body.head() == this_body.head() and len(body) >= len(this_body):
+                return True
+        return False
 
     def _undo_maybeEliminateSnakes(self):
         pass

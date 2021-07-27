@@ -234,3 +234,266 @@ class TestSimulation(unittest.TestCase):
                 'd': 41,
             }
         )
+        self.sim.undo_turn()
+        self.expect_board(
+            '''
+            v....vv
+            va<..Cv
+            >>^...d
+            .*.....
+            .....*.
+            ...>>b.
+            ''',
+            {
+                'a': 51,
+                'b': 100,
+                'c': 2,
+                'd': 42,
+            }
+        )
+
+    def test_starve(self):
+        self.sim.do_move(self.name_to_id['a'], models.UP)
+        self.sim.do_move(self.name_to_id['b'], models.UP)
+        self.sim.do_move(self.name_to_id['c'], models.DOWN)
+        self.sim.do_move(self.name_to_id['d'], models.DOWN)
+        self.sim.do_turn()
+        self.expect_board(
+            '''
+            .a...v.
+            v^<..vv
+            >>^..cv
+            .*....d
+            .....B.
+            ....>^.
+            ''',
+            {
+                'a': 50,
+                'b': 100,
+                'c': 1,
+                'd': 41,
+            }
+        )
+        self.sim.do_move(self.name_to_id['a'], models.RIGHT)
+        self.sim.do_move(self.name_to_id['b'], models.UP)
+        self.sim.do_move(self.name_to_id['c'], models.DOWN)
+        self.sim.do_move(self.name_to_id['d'], models.DOWN)
+        self.sim.do_turn()
+        # Snake c should starve on second turn
+        self.expect_board(
+            '''
+            .>a....
+            .^<....
+            >>^...v
+            .*...bv
+            .....^d
+            ....>^.
+            ''',
+            {
+                'a': 49,
+                'b': 99,
+                'c': 0,
+                'd': 40,
+            }
+        )
+
+        # But c should come back after undo
+        self.sim.undo_turn()
+        self.expect_board(
+            '''
+            .a...v.
+            v^<..vv
+            >>^..cv
+            .*....d
+            .....B.
+            ....>^.
+            ''',
+            {
+                'a': 50,
+                'b': 100,
+                'c': 1,
+                'd': 41,
+            }
+        )
+
+
+    def test_move_out_of_bounds(self):
+        self.sim.do_move(self.name_to_id['a'], models.UP)
+        self.sim.do_move(self.name_to_id['b'], models.DOWN)
+        self.sim.do_move(self.name_to_id['c'], models.DOWN)
+        self.sim.do_move(self.name_to_id['d'], models.DOWN)
+        self.sim.do_turn()
+        self.expect_board(
+            '''
+            .a...v.
+            v^<..vv
+            >>^..cv
+            .*....d
+            .....*.
+            .......
+            ''',
+            {
+                'a': 50,
+                'b': 0,
+                'c': 1,
+                'd': 41,
+            }
+        )
+        self.sim.undo_turn()
+        self.expect_board(
+            '''
+            v....vv
+            va<..Cv
+            >>^...d
+            .*.....
+            .....*.
+            ...>>b.
+            ''',
+            {
+                'a': 51,
+                'b': 100,
+                'c': 2,
+                'd': 42,
+            }
+        )
+
+    def test_move_into_body(self):
+        self.sim.do_move(self.name_to_id['a'], models.UP)
+        self.sim.do_move(self.name_to_id['b'], models.RIGHT)
+        self.sim.do_move(self.name_to_id['c'], models.RIGHT)
+        self.sim.do_move(self.name_to_id['d'], models.DOWN)
+        self.sim.do_turn()
+        self.expect_board(
+            '''
+            .a.....
+            v^<...v
+            >>^...v
+            .*....d
+            .....*.
+            ....>>b
+            ''',
+            {
+                'a': 50,
+                'b': 99,
+                'c': 0,
+                'd': 41,
+            }
+        )
+        self.sim.undo_turn()
+        self.expect_board(
+            '''
+            v....vv
+            va<..Cv
+            >>^...d
+            .*.....
+            .....*.
+            ...>>b.
+            ''',
+            {
+                'a': 51,
+                'b': 100,
+                'c': 2,
+                'd': 42,
+            }
+        )
+
+    def test_move_head_to_head(self):
+        self.sim.do_move(self.name_to_id['a'], models.UP)
+        self.sim.do_move(self.name_to_id['b'], models.UP)
+        self.sim.do_move(self.name_to_id['c'], models.DOWN)
+        self.sim.do_move(self.name_to_id['d'], models.DOWN)
+        self.sim.do_turn()
+        self.expect_board(
+            '''
+            .a...v.
+            v^<..vv
+            >>^..cv
+            .*....d
+            .....B.
+            ....>^.
+            ''',
+            {
+                'a': 50,
+                'b': 100,
+                'c': 1,
+                'd': 41,
+            }
+        )
+        self.sim.do_move(self.name_to_id['a'], models.RIGHT)
+        self.sim.do_move(self.name_to_id['b'], models.RIGHT)
+        self.sim.do_move(self.name_to_id['c'], models.DOWN)
+        self.sim.do_move(self.name_to_id['d'], models.DOWN)
+        self.sim.do_turn()
+        self.expect_board(
+            '''
+            .>a....
+            .^<....
+            >>^....
+            .*.....
+            .....>b
+            ....>^.
+            ''',
+            {
+                'a': 49,
+                'b': 99,
+                'c': 0,
+                'd': 0,
+            }
+        )
+        self.sim.undo_turn()
+        self.expect_board(
+            '''
+            .a...v.
+            v^<..vv
+            >>^..cv
+            .*....d
+            .....B.
+            ....>^.
+            ''',
+            {
+                'a': 50,
+                'b': 100,
+                'c': 1,
+                'd': 41,
+            }
+        )
+
+    def test_move_head_to_head_tie(self):
+        self.sim.do_move(self.name_to_id['a'], models.UP)
+        self.sim.do_move(self.name_to_id['b'], models.RIGHT)
+        self.sim.do_move(self.name_to_id['c'], models.DOWN)
+        self.sim.do_move(self.name_to_id['d'], models.LEFT)
+        self.sim.do_turn()
+        self.expect_board(
+            '''
+            .a.....
+            v^<....
+            >>^....
+            .*.....
+            .....*.
+            ....>>b
+            ''',
+            {
+                'a': 50,
+                'b': 99,
+                'c': 0,
+                'd': 0,
+            }
+        )
+        self.sim.undo_turn()
+        self.expect_board(
+            '''
+            v....vv
+            va<..Cv
+            >>^...d
+            .*.....
+            .....*.
+            ...>>b.
+            ''',
+            {
+                'a': 51,
+                'b': 100,
+                'c': 2,
+                'd': 42,
+            }
+        )

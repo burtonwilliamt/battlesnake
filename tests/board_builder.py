@@ -65,11 +65,16 @@ class BoardBuilder:
         ]
 
     def find_heads(self) -> List[models.Coord]:
-        return [
-            coord
-            for coord, val in self.grid_iter()
-            if val.lower() in self.HEADS
-        ]
+        locations = []
+        heads = set()
+        for coord, val in self.grid_iter():
+            if val.lower() not in self.HEADS:
+                continue
+            if val in heads:
+                raise AssertionError('Cannot have duplicate heads in board.')
+            heads.add(val.lower())
+            locations.append(coord)
+        return sorted(locations, key=lambda coord: self.grid[coord.x][coord.y].lower())
 
     def safe_get(self, x: int, y: int) -> str:
         if len(self.grid) > x >= 0 and len(self.grid[x]) > y >= 0:

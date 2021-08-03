@@ -7,22 +7,6 @@ import src.models as models
 
 class TestBoardBuilder(unittest.TestCase):
 
-    def setUp(self):
-        self.bb = BoardBuilder(
-            '''
-            v....vv
-            va<..Cv
-            >>^...d
-            ....*..
-            .*.....
-            ...>>b.
-            ''', {
-                'a': 51,
-                'b': 100,
-                'c': 0,
-                'd': 42,
-            })
-
     def test_str_to_grid(self):
         self.assertEqual(
             BoardBuilder.str_to_grid('''
@@ -38,20 +22,47 @@ class TestBoardBuilder(unittest.TestCase):
             ])
 
     def test_grid_iter(self):
+        bb = BoardBuilder(
+            '''
+            v....vv
+            va<..Cv
+            >>^...d
+            ....*..
+            .*.....
+            ...>>b.
+            ''', {
+                'a': 51,
+                'b': 100,
+                'c': 0,
+                'd': 42,
+            })
         coords = set()
-        for coord, val in self.bb.grid_iter():
+        for coord, val in bb.grid_iter():
             x = coord.x
             y = coord.y
             self.assertEqual(
-                val, self.bb.grid[x][y],
+                val, bb.grid[x][y],
                 'grid_iter returned the wrong value for this coordinate')
             coords.add((x, y))
         self.assertEqual(len(coords),
-                         len(self.bb.grid) * len(self.bb.grid[0]),
+                         len(bb.grid) * len(bb.grid[0]),
                          'grid_iter did not return everything exactly once')
 
     def test_to_board(self):
-        b = self.bb.to_board()
+        b = BoardBuilder(
+            '''
+            v....vv
+            va<..Cv
+            >>^...d
+            ....*..
+            .*.....
+            ...>>b.
+            ''', {
+                'a': 51,
+                'b': 100,
+                'c': 0,
+                'd': 42,
+            }).to_board()
         self.assertEqual(b.width, 7)
         self.assertEqual(b.height, 6)
         self.assertEqual(len(b.hazards), 0)
@@ -107,3 +118,31 @@ class TestBoardBuilder(unittest.TestCase):
             length=3,
             body=((6, 3), (6, 4), (6, 5)),
         )
+
+    def test_snakes_in_name_order(self):
+        bb = BoardBuilder(
+            '''
+            v....vv
+            va<..Cv
+            >>^...d
+            ....*..
+            .*.....
+            ...>>b.
+            ''', {
+                'a': 51,
+                'b': 100,
+                'c': 0,
+                'd': 42,
+            })
+
+        self.assertEqual(
+            bb.find_heads(), [
+                models.Coord.from_x_y(1, 4),
+                models.Coord.from_x_y(5, 0),
+                models.Coord.from_x_y(5, 4),
+                models.Coord.from_x_y(6, 3),
+            ], 'Heads should be returned in alphabetical order by name.')
+
+        b = bb.to_board()
+        self.assertEqual([snk.name for snk in b.snakes], ['a', 'b', 'c', 'd'],
+                         'BoardBuilder should order the snakes by their name.')

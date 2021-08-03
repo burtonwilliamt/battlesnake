@@ -27,6 +27,10 @@ class Simulation:
 
     def __init__(self, board: models.Board, max_depth=100):
         self.turn = 0
+        # NOTE: max_depth is the maximum turn number
+        # This means that with max_depth, turn 0 is the only valid turn.
+        # Calling do_move or do_turn when turn == max_depth will error.
+        # The arrays should be size max_depth+1 to initialize turn 0 correctly.
         self.max_depth = max_depth
         self.width = board.width
         self.height = board.height
@@ -47,20 +51,19 @@ class Simulation:
         # First row is starting health
         self._t_health = [[
             snk.health for snk in live_snakes
-        ]] + [[None] * num_snakes for _ in range(self.max_depth - 1)]
+        ]] + [[None] * num_snakes for _ in range(self.max_depth)]
 
         # self._t_move_choices[t] are choices received on turn t
         # when these choices are applied, it becomes turn t+1
         self._t_move_choices = [
-            [None] * num_snakes for _ in range(self.max_depth)
+            [None] * num_snakes for _ in range(self.max_depth + 1)
         ]
 
         # List of food that's available
-        self._t_food = [list(board.food)
-                       ] + [[] for _ in range(self.max_depth - 1)]
+        self._t_food = [list(board.food)] + [[] for _ in range(self.max_depth)]
 
         # List of snakes that grew at the start of turn i
-        self._t_grown_snakes = [[] for _ in range(self.max_depth)]
+        self._t_grown_snakes = [[] for _ in range(self.max_depth + 1)]
 
         # 2d array of board state
         #self.queue_grid = []
@@ -78,13 +81,26 @@ class Simulation:
     def food(self) -> Iterable[models.Coord]:
         return self._t_food[self.turn]
 
+    def turns_alive(self, snk_id:int) -> int:
+        """How long a snake has lived for. If still alive this is self.turn"""
+        for i in range(self.turn, -1, -1):
+            if self._t_health[i][snk_id] > 0:
+                return i
+        return 0
+
     def do_move(self, snk_id: int, d: models.Direction):
+        if self.turn == self.max_depth:
+            raise AssertionError(
+                'Cannot call do_move when simulation is at max depth.')
         self._t_move_choices[self.turn][snk_id] = d
 
     def undo_move(self, snk_id: int):
         self._t_move_choices[self.turn][snk_id] = None
 
     def do_turn(self):
+        if self.turn == self.max_depth:
+            raise AssertionError(
+                'Cannot call do_turn when simulation is at max depth.')
         self._moveSnakes()
         self._reduceSnakeHealth()
         self._maybeFeedSnakes()
@@ -117,12 +133,10 @@ class Simulation:
 
             d = self._t_move_choices[self.turn][snk_id]
             body = self.bodies[snk_id]
-            new_head = models.Coord(
-                {
-                    'x': body.head().x + d.rel_x,
-                    'y': body.head().y + d.rel_y,
-                }
-            )
+            new_head = models.Coord({
+                'x': body.head().x + d.rel_x,
+                'y': body.head().y + d.rel_y,
+            })
             body.add_head(new_head)
             body.del_tail()
 
@@ -198,26 +212,25 @@ class Simulation:
         for snk_id in collisions:
             self._t_health[self.turn + 1][snk_id] = 0
 
-    def _snakeIsOutOfHealth(self, snk_id:int):
+    def _snakeIsOutOfHealth(self, snk_id: int):
         return self._t_health[self.turn + 1][snk_id] == 0
 
-    def _snakeIsOutOfBounds(self, snk_id:int):
+    def _snakeIsOutOfBounds(self, snk_id: int):
         x = self.bodies[snk_id].head().x
         y = self.bodies[snk_id].head().y
         return not 0 <= x < self.width or not 0 <= y < self.height
 
-    def _snakeHasBodyCollided(self, snk_id:int):
+    def _snakeHasBodyCollided(self, snk_id: int):
         x = self.bodies[snk_id].head().x
         y = self.bodies[snk_id].head().y
-        for other_id, body in enumerate(self.bodies):
-            if other_id == snk_id:
-                continue
+        for body in self.bodies:
+            # Ignore heads, we'll check that in other places
             for segment in body.current_body[1:]:
                 if x == segment.x and y == segment.y:
                     return True
         return False
 
-    def _snakeHasLostHeadToHead(self, snk_id:int):
+    def _snakeHasLostHeadToHead(self, snk_id: int):
         this_body = self.bodies[snk_id]
         for other_id, body in enumerate(self.bodies):
             if other_id == snk_id:

@@ -38,10 +38,6 @@ class Result:
         if DEBUG:
             self.sim_render = sim.render()
 
-    @classmethod
-    def reduce(cls, results: Iterable['Result'], snk_id: int) -> 'Result':
-        return max(results, key=lambda res: res.evaluate(snk_id))
-
     def evaluate(self, snk_id: str) -> int:
         # | 8 bits      | 8 bits        | 8 bits    | 8 bits    |
         # | turns alive | # dead snakes | my_length | my health |
@@ -104,6 +100,7 @@ class SnakeDecision(DecisionNode):
             value = self.moves[d].node_evaluate(self.snk_id)
             if best_value is None or value > best_value:
                 best_direction = d
+                best_value = value
         return best_direction
 
     def get_result(self) -> Result:

@@ -48,28 +48,35 @@ class DecisionExplorer:
     def addstr_row(self, items: Iterable[str]):
         self.stdscr.addstr('|')
         for item in items:
-            self.stdscr.addstr(item + '|')
+            self.stdscr.addstr(f'{item:{self.board_width}}|')
         self.stdscr.addstr('\n')
 
     def display_snake_decision(self,
                                node: multi_max.SnakeDecision,
                                choice: models.Direction = None):
+        # State label
         self.stdscr.addstr(
             f'(Turn:{node.turn})(Snake:{node.snk_id})(Choice:{node.best_direction.name})\n'
         )
+        # Direction lables
+        self.addstr_row([d.name.upper() for d in self.DIRECTION_ORDER])
+        # Evaluate lables
         self.addstr_row([
-            f'{d.name.upper():{self.board_width}}' for d in self.DIRECTION_ORDER
+            hex(node.moves[d].node_evaluate(node.snk_id))[2:]
+            for d in self.DIRECTION_ORDER
         ])
+
+        # The board
         boards_lines = []
         for d in self.DIRECTION_ORDER:
             child_result = node.moves[d].get_result()
             boards_lines.append(child_result.sim_render.splitlines())
-
         for i in range(self.board_height):
             self.addstr_row([board[i] for board in boards_lines])
 
+        # Viewing selection indicator
         self.addstr_row([
-            'V' * self.board_width if d == choice else ' ' * self.board_width
+            '*' * self.board_width if d == choice else ' ' * self.board_width
             for d in self.DIRECTION_ORDER
         ])
 
@@ -87,7 +94,7 @@ class DecisionExplorer:
 
     def display(self):
         win_y, win_x = self.stdscr.getmaxyx()
-        max_nodes = int((win_y-1) / (self.board_height + 3))
+        max_nodes = int((win_y - 1) / (self.board_height + 4))
         nodes_to_skip = (len(self.branch_choices) + 1) - max_nodes
         node = self.root
         for choice in self.branch_choices:
@@ -100,7 +107,7 @@ class DecisionExplorer:
             node = node.moves[choice]
         self.display_decision_node(node)
 
-        self.stdscr.addstr(win_y-1, 0, 'WASD to select, Q to quit')
+        self.stdscr.addstr(win_y - 1, 0, 'WASD to select, Q to quit')
 
     def get_last_selected_node(self) -> multi_max.DecisionNode:
         node = self.root
@@ -151,17 +158,11 @@ def init_curses():
 if __name__ == '__main__':
     board = board_builder.BoardBuilder(
         '''
-        v....vv
-        va<..Cv
-        >>^...d
-        .*.....
-        .....*.
-        ...>>b.
+        .....
+        .>>a.
+        ...*.
         ''', {
-            'a': 51,
-            'b': 100,
-            'c': 2,
-            'd': 42,
+            'a': 1,
         }).to_board()
     sim = simulation.Simulation(board)
     root = multi_max.SnakeDecision.make_tree(sim, depth=3)

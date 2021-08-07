@@ -67,49 +67,6 @@ class TestMultiMax(unittest.TestCase):
         self.assertEqual(bin(res3.evaluate(1)),
                          bin(multi_max.pack_to_bits(2, 0, 3, 47)))
 
-    def test_result_reduce(self):
-        sim = Simulation(board=BoardBuilder(
-            '''
-            .v...
-            .>b..
-            ...av
-            ...^<
-            ''',
-            {
-                'a': 50,
-                'b': 49,
-            },
-        ).to_board())
-
-        # Both snakes live
-        sim.do_move(0, models.UP)
-        sim.do_move(1, models.UP)
-        sim.do_turn()
-        res1 = multi_max.Result(sim)
-
-        # B runs into snake a and dies
-        sim.undo_turn()
-        sim.undo_move(1)
-        sim.do_move(1, models.RIGHT)
-        sim.do_turn()
-        res2 = multi_max.Result(sim)
-
-        self.assertEqual(bin(res1.evaluate(0)),
-                         bin(multi_max.pack_to_bits(1, 0, 4, 49)))
-        self.assertEqual(bin(res1.evaluate(1)),
-                         bin(multi_max.pack_to_bits(1, 0, 3, 48)))
-
-        self.assertEqual(bin(res2.evaluate(0)),
-                         bin(multi_max.pack_to_bits(1, 1, 4, 49)))
-        self.assertEqual(bin(res2.evaluate(1)),
-                         bin(multi_max.pack_to_bits(0, 1, 3, 0)))
-
-        res_max_a = multi_max.Result.reduce([res1, res2], 0)
-        res_max_b = multi_max.Result.reduce([res1, res2], 1)
-
-        self.assertEqual(res_max_a, res2)
-        self.assertEqual(res_max_b, res1)
-
 
 class TestSituations(unittest.TestCase):
     def test_hallway(self):

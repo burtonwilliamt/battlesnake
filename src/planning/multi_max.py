@@ -1,4 +1,4 @@
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, List, Mapping
 
 import src.models as models
 
@@ -11,6 +11,8 @@ from src.planning.simulation import Simulation
 # What do we imagine the other snakes do?
 
 c_f = models.CARDINAL_FOUR
+
+DEBUG = True
 
 
 def pack_to_bits(*args, bits=8) -> int:
@@ -31,6 +33,10 @@ class Result:
                 self.num_dead += 1
         self.lengths = [len(sim.bodies[snk_id]) for snk_id in sim.snake_ids]
         self.turns_alive = {snk_id: sim.turns_alive(snk_id) for snk_id in sim.snake_ids}
+
+        self.sim_render = None
+        if DEBUG:
+            self.sim_render = sim.render()
 
     @classmethod
     def reduce(cls, results: Iterable['Result'], snk_id: int) -> 'Result':
@@ -61,46 +67,88 @@ class Result:
                 self.lengths == other.lengths)
 
 
-def snake_i_best_move(sim: Simulation, snk_id: int,
-                      depth: int) -> Tuple[Result, models.Direction]:
-    if snk_id >= len(sim.snake_ids):
-        result, direction = do_next_turn(sim, depth - 1)
-        return result, direction
+class DecisionNode:
+    def get_result(self) -> Result:
+        raise NotImplementedError
 
-    # If this snake is dead, just let the other snakes play.
-    if sim.snake_is_dead(snk_id):
-        others_result, _ = snake_i_best_move(sim, snk_id + 1, depth)
-        return others_result, None
-
-    # Try moving each direction
-    best_result = None
-    best_direction = None
-    for d in c_f:
-        sim.do_move(snk_id, d)
-        result, _ = snake_i_best_move(sim, snk_id + 1, depth)
-        if best_result is None or result.evaluate(
-                snk_id) > best_result.evaluate(snk_id):
-            best_result = result
-            best_direction = d
-        sim.undo_move(snk_id)
-
-    return best_result, best_direction
+    def node_evaluate(self, snk_id:int) -> int:
+        result = self.get_result()
+        return result.evaluate(snk_id)
 
 
-def do_next_turn(sim: Simulation,
-                 depth: int) -> Tuple[Result, models.Direction]:
-    sim.do_turn()
-    if depth <= 0:
-        result = Result(sim)
+class LeafNode(DecisionNode):
+    def __init__(self, sim:Simulation):
+        self.result = Result(sim)
+        self.turn = sim.turn
+
+    def get_result(self) -> Result:
+        return self.result
+
+
+class SnakeDecision(DecisionNode):
+    def __init__(self, *, snk_id:int, turn:int, moves:Mapping[models.Direction, DecisionNode]):
+        self.snk_id = snk_id
+        self.turn = turn
+
+        self.moves = moves
+        for d in models.CARDINAL_FOUR:
+            if d not in moves:
+                raise AssertionError('The moves mapping should have all directions.')
+
+        self.best_direction = self._find_best_direction()
+
+    def _find_best_direction(self) -> models.Direction:
+        best_value = None
+        best_direction = None
+        for d in models.CARDINAL_FOUR:
+            value = self.moves[d].node_evaluate(self.snk_id)
+            if best_value is None or value > best_value:
+                best_direction = d
+        return best_direction
+
+    def get_result(self) -> Result:
+        return self.moves[self.best_direction].get_result()
+
+    @classmethod
+    def _process_turn(cls, sim:Simulation, depth:int) -> DecisionNode:
+        sim.do_turn()
+        if depth <= 0:
+            node = LeafNode(sim)
+            sim.undo_turn()
+            return node
+        node = cls._process_snk_id_at_depth(sim, 0, depth)
         sim.undo_turn()
-        return result, None
-    result, direction = snake_i_best_move(sim, 0, depth)
-    sim.undo_turn()
-    return result, direction
+        return node
+
+    @classmethod
+    def _process_snk_id_at_depth(cls, sim: Simulation, snk_id: int,
+                      depth: int) -> DecisionNode:
+        # Base condition, if we did all the snakes then do a turn.
+        if snk_id >= len(sim.snake_ids):
+            node = cls._process_turn(sim, depth - 1)
+            return node
+
+        # If this snake is dead, just let the other snakes play.
+        if sim.snake_is_dead(snk_id):
+            node = cls._process_snk_id_at_depth(sim, snk_id + 1, depth)
+            return node
+
+        # Try moving each direction.
+        moves = {}
+        for d in models.CARDINAL_FOUR:
+            sim.do_move(snk_id, d)
+            moves[d] = cls._process_snk_id_at_depth(sim, snk_id + 1, depth)
+            sim.undo_move(snk_id)
+
+        return cls(snk_id=snk_id, turn=sim.turn, moves=moves)
+
+    @classmethod
+    def make_tree(cls, sim: Simulation, depth: int):
+        return cls._process_snk_id_at_depth(sim, 0, depth)
 
 
 def ideal_direction(board: models.Board, depth=3) -> models.Direction:
+    # TODO: require snk_id
     sim = Simulation(board, max_depth=depth)
-    #TODO: order sim.snake_ids so that you.id is last
-    _, best_direction = snake_i_best_move(sim, 0, depth)
-    return best_direction
+    root = SnakeDecision.make_tree(sim, depth)
+    return root.best_direction

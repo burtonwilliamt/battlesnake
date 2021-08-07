@@ -241,3 +241,51 @@ class Simulation:
 
     def _undo_maybeEliminateSnakes(self):
         pass
+
+    def render(self) -> str:
+        grid = [['.' for _ in range(self.height)] for _ in range(self.width)]
+
+
+        for f in self.food:
+            grid[f.x][f.y] = '*'
+
+        for snk_id, body in enumerate(self.bodies):
+            # Don't render dead snakes
+            if self.snake_is_dead(snk_id):
+                continue
+
+            name = self.names[snk_id]
+            for i, segment in enumerate(body):
+                # Handle the head
+                if i == 0:
+                    # If the tail is stacked, make it uppercase
+                    if body.current_body[-1] == body.current_body[-2]:
+                        grid[segment.x][segment.y] = name.upper()
+                    else:
+                        grid[segment.x][segment.y] = name.lower()
+                    continue
+                # Find one segment closer to the head
+                newer = body.current_body[i-1]
+                # Find the move required to get closer to the head
+                to_head = (newer.x - segment.x, newer.y - segment.y)
+                # If to_head is the direction to head, how to point
+                if to_head == (1, 0):
+                    grid[segment.x][segment.y] = '>'
+                elif to_head == (-1, 0):
+                    grid[segment.x][segment.y] = '<'
+                elif to_head == (0, 1):
+                    grid[segment.x][segment.y] = '^'
+                elif to_head == (0, -1):
+                    grid[segment.x][segment.y] = 'v'
+                elif to_head == (0, 0):
+                    pass
+                else:
+                    raise AssertionError('The segments aren\'t adjacent.')
+
+        rows = []
+        for y in reversed(range(self.height)):
+            row = []
+            for x in range(self.width):
+                row.append(grid[x][y])
+            rows.append(''.join(row))
+        return '\n'.join(rows) + '\n'

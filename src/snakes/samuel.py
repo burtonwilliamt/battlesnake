@@ -3,6 +3,7 @@ from typing import List
 
 import src.models as models
 from src.snakes.default import BattlesnakeServer
+import src.planning.multi_max as multi_max
 
 
 def valid_directions(data:models.Data, snk:models.Battlesnake) -> List[models.Direction]:
@@ -20,11 +21,10 @@ class Samuel(BattlesnakeServer):
         )
 
     def handle_move(self, data:models.Data) -> models.Direction:
-        possible_directions = valid_directions(data, data.you)
-        if len(possible_directions) == 0:
-            possible_directions = models.CARDINAL_FOUR
-        direction = random.choice(possible_directions)
 
-        print(f'MOVE: {direction.name}')
-        return direction
+        # Order snakes such that you are first
+        data.board.snakes.sort(key=lambda snk: snk.id != data.you)
+        best_direction = multi_max.ideal_direction(data.board, depth=2)
+        print(f'Moving {best_direction}')
+        return best_direction
 

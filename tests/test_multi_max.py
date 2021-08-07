@@ -148,3 +148,18 @@ class TestSituations(unittest.TestCase):
         self.assertEqual(
             best_dir, models.DOWN,
             'Snake should move down to eat.')
+
+    def test_simple_kill(self):
+        """If you can kill a competitor, do so."""
+        board = BoardBuilder('''
+            ...a.
+            ...^b
+            ..>^^
+            ''', {
+            'a': 5,
+            'b': 7,
+        }).to_board()
+        best_dir = multi_max.ideal_direction(board, depth=3)
+        self.assertEqual(
+            best_dir, models.RIGHT,
+            'Snake should move right to kill.')

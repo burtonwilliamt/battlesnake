@@ -113,14 +113,12 @@ class TestSimulation(unittest.TestCase):
             .*.....
             .....*.
             ...>>b.
-            ''',
-            {
+            ''', {
                 'a': 51,
                 'b': 100,
                 'c': 2,
                 'd': 42,
-            }
-        )
+            })
 
     def test_move(self):
         self.sim.do_move(self.name_to_id['a'], models.UP)
@@ -136,14 +134,12 @@ class TestSimulation(unittest.TestCase):
             .*....d
             .....*.
             ....>>b
-            ''',
-            {
+            ''', {
                 'a': 50,
                 'b': 99,
                 'c': 1,
                 'd': 41,
-            }
-        )
+            })
 
     def test_move_and_undo_move(self):
         # Do some move
@@ -160,14 +156,12 @@ class TestSimulation(unittest.TestCase):
             .*....d
             .....*.
             ....>>b
-            ''',
-            {
+            ''', {
                 'a': 50,
                 'b': 99,
                 'c': 1,
                 'd': 41,
-            }
-        )
+            })
 
         # Roll it back partially
         self.sim.undo_turn()
@@ -182,14 +176,12 @@ class TestSimulation(unittest.TestCase):
             .*.....
             .....*.
             ...>>b.
-            ''',
-            {
+            ''', {
                 'a': 51,
                 'b': 100,
                 'c': 2,
                 'd': 42,
-            }
-        )
+            })
 
         # Do something different
         self.sim.do_move(self.name_to_id['c'], models.LEFT)
@@ -203,14 +195,12 @@ class TestSimulation(unittest.TestCase):
             .*.....
             .....*.
             ....>>b
-            ''',
-            {
+            ''', {
                 'a': 50,
                 'b': 99,
                 'c': 1,
                 'd': 41,
-            }
-        )
+            })
 
     def test_eat_food(self):
         self.sim.do_move(self.name_to_id['a'], models.UP)
@@ -226,14 +216,12 @@ class TestSimulation(unittest.TestCase):
             .*....d
             .....B.
             ....>^.
-            ''',
-            {
+            ''', {
                 'a': 50,
                 'b': 100,
                 'c': 1,
                 'd': 41,
-            }
-        )
+            })
         self.sim.undo_turn()
         self.expect_board(
             '''
@@ -243,14 +231,12 @@ class TestSimulation(unittest.TestCase):
             .*.....
             .....*.
             ...>>b.
-            ''',
-            {
+            ''', {
                 'a': 51,
                 'b': 100,
                 'c': 2,
                 'd': 42,
-            }
-        )
+            })
 
     def test_starve(self):
         self.sim.do_move(self.name_to_id['a'], models.UP)
@@ -266,14 +252,12 @@ class TestSimulation(unittest.TestCase):
             .*....d
             .....B.
             ....>^.
-            ''',
-            {
+            ''', {
                 'a': 50,
                 'b': 100,
                 'c': 1,
                 'd': 41,
-            }
-        )
+            })
         self.sim.do_move(self.name_to_id['a'], models.RIGHT)
         self.sim.do_move(self.name_to_id['b'], models.UP)
         self.sim.do_move(self.name_to_id['c'], models.DOWN)
@@ -288,14 +272,12 @@ class TestSimulation(unittest.TestCase):
             .*...bv
             .....^d
             ....>^.
-            ''',
-            {
+            ''', {
                 'a': 49,
                 'b': 99,
                 'c': 0,
                 'd': 40,
-            }
-        )
+            })
 
         # But c should come back after undo
         self.sim.undo_turn()
@@ -307,15 +289,12 @@ class TestSimulation(unittest.TestCase):
             .*....d
             .....B.
             ....>^.
-            ''',
-            {
+            ''', {
                 'a': 50,
                 'b': 100,
                 'c': 1,
                 'd': 41,
-            }
-        )
-
+            })
 
     def test_move_out_of_bounds(self):
         self.sim.do_move(self.name_to_id['a'], models.UP)
@@ -331,14 +310,12 @@ class TestSimulation(unittest.TestCase):
             .*....d
             .....*.
             .......
-            ''',
-            {
+            ''', {
                 'a': 50,
                 'b': 0,
                 'c': 1,
                 'd': 41,
-            }
-        )
+            })
         self.sim.undo_turn()
         self.expect_board(
             '''
@@ -348,14 +325,12 @@ class TestSimulation(unittest.TestCase):
             .*.....
             .....*.
             ...>>b.
-            ''',
-            {
+            ''', {
                 'a': 51,
                 'b': 100,
                 'c': 2,
                 'd': 42,
-            }
-        )
+            })
 
     def test_move_into_body(self):
         self.sim.do_move(self.name_to_id['a'], models.UP)
@@ -371,14 +346,12 @@ class TestSimulation(unittest.TestCase):
             .*....d
             .....*.
             ....>>b
-            ''',
-            {
+            ''', {
                 'a': 50,
                 'b': 99,
                 'c': 0,
                 'd': 41,
-            }
-        )
+            })
         self.sim.undo_turn()
         self.expect_board(
             '''
@@ -388,14 +361,12 @@ class TestSimulation(unittest.TestCase):
             .*.....
             .....*.
             ...>>b.
-            ''',
-            {
+            ''', {
                 'a': 51,
                 'b': 100,
                 'c': 2,
                 'd': 42,
-            }
-        )
+            })
 
     def test_move_head_to_head(self):
         self.sim.do_move(self.name_to_id['a'], models.UP)
@@ -411,14 +382,12 @@ class TestSimulation(unittest.TestCase):
             .*....d
             .....B.
             ....>^.
-            ''',
-            {
+            ''', {
                 'a': 50,
                 'b': 100,
                 'c': 1,
                 'd': 41,
-            }
-        )
+            })
         self.sim.do_move(self.name_to_id['a'], models.RIGHT)
         self.sim.do_move(self.name_to_id['b'], models.RIGHT)
         self.sim.do_move(self.name_to_id['c'], models.DOWN)
@@ -432,14 +401,12 @@ class TestSimulation(unittest.TestCase):
             .*.....
             .....>b
             ....>^.
-            ''',
-            {
+            ''', {
                 'a': 49,
                 'b': 99,
                 'c': 0,
                 'd': 0,
-            }
-        )
+            })
         self.sim.undo_turn()
         self.expect_board(
             '''
@@ -449,14 +416,12 @@ class TestSimulation(unittest.TestCase):
             .*....d
             .....B.
             ....>^.
-            ''',
-            {
+            ''', {
                 'a': 50,
                 'b': 100,
                 'c': 1,
                 'd': 41,
-            }
-        )
+            })
 
     def test_move_head_to_head_tie(self):
         self.sim.do_move(self.name_to_id['a'], models.UP)
@@ -472,14 +437,12 @@ class TestSimulation(unittest.TestCase):
             .*.....
             .....*.
             ....>>b
-            ''',
-            {
+            ''', {
                 'a': 50,
                 'b': 99,
                 'c': 0,
                 'd': 0,
-            }
-        )
+            })
         self.sim.undo_turn()
         self.expect_board(
             '''
@@ -489,11 +452,29 @@ class TestSimulation(unittest.TestCase):
             .*.....
             .....*.
             ...>>b.
-            ''',
-            {
+            ''', {
                 'a': 51,
                 'b': 100,
                 'c': 2,
                 'd': 42,
-            }
-        )
+            })
+
+    def test_render(self):
+        board_text = textwrap.dedent('''\
+            v....vv
+            va<..Cv
+            >>^...d
+            .*.....
+            .....*.
+            ...>>b.
+            ''')
+        board = BoardBuilder(board_text, {
+            'a': 51,
+            'b': 100,
+            'c': 2,
+            'd': 42,
+        }).to_board()
+        sim = Simulation(board)
+        self.assertMultiLineEqual(
+            sim.render(), board_text,
+            'Render should return the same board that was built.')

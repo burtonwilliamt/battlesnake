@@ -1,6 +1,7 @@
 from typing import Iterable, Tuple, List, Mapping
 
 import src.models as models
+import config
 
 from src.planning.simulation import Simulation
 
@@ -11,8 +12,6 @@ from src.planning.simulation import Simulation
 # What do we imagine the other snakes do?
 
 c_f = models.CARDINAL_FOUR
-
-DEBUG = True
 
 
 def pack_to_bits(*args, bits=8) -> int:
@@ -35,7 +34,7 @@ class Result:
         self.turns_alive = {snk_id: sim.turns_alive(snk_id) for snk_id in sim.snake_ids}
 
         self.sim_render = None
-        if DEBUG:
+        if config.DEBUG:
             self.sim_render = sim.render()
 
     def evaluate(self, snk_id: str) -> int:
@@ -133,9 +132,12 @@ class SnakeDecision(DecisionNode):
         # Try moving each direction.
         moves = {}
         for d in models.CARDINAL_FOUR:
-            sim.do_move(snk_id, d)
-            moves[d] = cls._process_snk_id_at_depth(sim, snk_id + 1, depth)
-            sim.undo_move(snk_id)
+            if sim.is_obvious_death(snk_id, d):
+                moves[d] = LeafNode(sim)
+            else:
+                sim.do_move(snk_id, d)
+                moves[d] = cls._process_snk_id_at_depth(sim, snk_id + 1, depth)
+                sim.undo_move(snk_id)
 
         return cls(snk_id=snk_id, turn=sim.turn, moves=moves)
 

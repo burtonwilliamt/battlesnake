@@ -62,7 +62,7 @@ class DecisionExplorer:
         self.addstr_row([d.name.upper() for d in self.DIRECTION_ORDER])
         # Evaluate lables
         self.addstr_row([
-            hex(node.moves[d].node_evaluate(node.snk_id))[2:]
+            f'{hex(node.moves[d].node_evaluate(node.snk_id))[2:]:>{self.board_width}}'
             for d in self.DIRECTION_ORDER
         ])
 
@@ -121,6 +121,8 @@ class DecisionExplorer:
             curses.curs_set(0)
             self.display()
             self.stdscr.refresh()
+            selected_node = self.get_last_selected_node()
+
             c = self.stdscr.getkey()
             if c == 'q':
                 break
@@ -129,8 +131,7 @@ class DecisionExplorer:
                     continue
                 self.branch_choices.pop()
             elif c == 's':
-                if isinstance(self.get_last_selected_node(),
-                              multi_max.LeafNode):
+                if isinstance(selected_node, multi_max.LeafNode):
                     continue
                 self.branch_choices.append(self.DIRECTION_ORDER[0])
             elif c == 'd':
@@ -158,11 +159,17 @@ def init_curses():
 if __name__ == '__main__':
     board = board_builder.BoardBuilder(
         '''
-        .....
-        .>>a.
-        ...*.
+        v....vv
+        va<..Cv
+        >>^...d
+        .*.....
+        .....*.
+        ...>>b.
         ''', {
-            'a': 1,
+            'a': 51,
+            'b': 100,
+            'c': 2,
+            'd': 42,
         }).to_board()
     sim = simulation.Simulation(board)
     root = multi_max.SnakeDecision.make_tree(sim, depth=3)

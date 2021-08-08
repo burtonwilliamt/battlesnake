@@ -6,13 +6,13 @@ from typing import Mapping
 import cherrypy
 
 from src.snakes.default import BattlesnakeServer
+from src.snakes.igor import Igor
 from src.snakes.samuel import Samuel
 from src.snakes.medusa import Medusa
 """
 This is a simple Battlesnake server written in Python.
 For instructions see https://github.com/BattlesnakeOfficial/starter-snake-python/README.md
 """
-
 
 def snake_servers() -> Mapping[str, BattlesnakeServer]:
     """Return all the snake servers this webserver should host
@@ -23,6 +23,7 @@ def snake_servers() -> Mapping[str, BattlesnakeServer]:
     """
     return {
         '/samuel': Samuel(),
+        '/igor': Igor(),
         '/medusa': Medusa(),
     }
 

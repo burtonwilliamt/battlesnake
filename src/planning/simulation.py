@@ -81,6 +81,19 @@ class Simulation:
     def food(self) -> Iterable[models.Coord]:
         return self._t_food[self.turn]
 
+    def is_obvious_death(self, snk_id:int, d:models.Direction):
+        body = self.bodies[snk_id]
+        new_head = models.Coord({
+            'x': body.head().x + d.rel_x,
+            'y': body.head().y + d.rel_y,
+        })
+        if new_head == body.current_body[1]:
+            # Back on the neck
+            return True
+        if not ( 0 <= new_head.x < self.width and 0 <= new_head.y < self.height):
+            # Out of bounds
+            return True
+
     def turns_alive(self, snk_id:int) -> int:
         """How long a snake has lived for. If still alive this is self.turn"""
         for i in range(self.turn, -1, -1):

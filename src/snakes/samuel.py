@@ -10,7 +10,7 @@ class Samuel(BattlesnakeServer):
             color= '#039903',
             head= 'silly',
             tail= 'round-bum',
-            version= '0.1.0',
+            version= '0.5.0',
         )
 
     def handle_move(self, data:models.Data) -> models.Direction:

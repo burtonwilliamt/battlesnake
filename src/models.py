@@ -107,7 +107,7 @@ class Battlesnake:
         self.name = data['name']
         self.health = data['health']
         self.body = [Coord(pt) for pt in data['body']]
-        self.latency = float(data['latency'])
+        self.latency = float(data['latency']) if data['latency'] != '' else None
         self.head = Coord(data['head'])
         self.length = data['length']
         self.shout = data['shout'] if 'shout' in data else None

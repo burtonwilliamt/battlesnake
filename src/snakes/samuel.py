@@ -19,8 +19,12 @@ class Samuel(BattlesnakeServer):
         )
 
     def update_calculation_depth(self, data: models.Data):
-        # If we are getting dangerously close to the limit, don't increase depth
-        if data.you.latency > data.game.timeout * 0.5:
+        print(f'Latency is "{data.you.latency}"')
+        # First call, no latency
+        if data.you.latency is None:
+            pass
+        # If we are getting dangerously close to the limit, decrease depth.
+        elif data.you.latency == 0.0 or data.you.latency > data.game.timeout * 0.5:
             self.calculation_depth -= 1
         # If we have plenty of extra time, look further.
         elif data.you.latency < data.game.timeout * 0.1:

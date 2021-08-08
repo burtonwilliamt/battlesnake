@@ -107,7 +107,7 @@ class Battlesnake:
         self.name = data['name']
         self.health = data['health']
         self.body = [Coord(pt) for pt in data['body']]
-        self.latency = data['latency']
+        self.latency = float(data['latency'])
         self.head = Coord(data['head'])
         self.length = data['length']
         self.shout = data['shout'] if 'shout' in data else None
@@ -169,7 +169,7 @@ class Game:
     def __init__(self, data: dict):
         self.id = data['id']
         self.ruleset = Ruleset(data['ruleset'])
-        self.timeout = data['timeout']
+        self.timeout = float(data['timeout'])
 
 
 class Data:

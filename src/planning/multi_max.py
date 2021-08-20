@@ -31,7 +31,9 @@ class Result:
             if health == 0:
                 self.num_dead += 1
         self.lengths = [len(sim.bodies[snk_id]) for snk_id in sim.snake_ids]
-        self.turns_alive = {snk_id: sim.turns_alive(snk_id) for snk_id in sim.snake_ids}
+        self.turns_alive = {
+            snk_id: sim.turns_alive(snk_id) for snk_id in sim.snake_ids
+        }
 
         self.sim_render = None
         if config.DEBUG:
@@ -63,16 +65,18 @@ class Result:
 
 
 class DecisionNode:
+
     def get_result(self) -> Result:
         raise NotImplementedError
 
-    def node_evaluate(self, snk_id:int) -> int:
+    def node_evaluate(self, snk_id: int) -> int:
         result = self.get_result()
         return result.evaluate(snk_id)
 
 
 class LeafNode(DecisionNode):
-    def __init__(self, sim:Simulation):
+
+    def __init__(self, sim: Simulation):
         self.result = Result(sim)
         self.turn = sim.turn
 
@@ -81,44 +85,52 @@ class LeafNode(DecisionNode):
 
 
 class SnakeDecision(DecisionNode):
-    def __init__(self, *, snk_id:int, turn:int, moves:Mapping[models.Direction, DecisionNode]):
+
+    def __init__(self, *, snk_id: int, turn: int,
+                 moves: Mapping[models.Direction, DecisionNode]):
         self.snk_id = snk_id
         self.turn = turn
 
-        self.moves = moves
         for d in models.CARDINAL_FOUR:
             if d not in moves:
-                raise AssertionError('The moves mapping should have all directions.')
+                raise AssertionError(
+                    'The moves mapping should have all directions.')
+        self.moves = None
+        if config.DEBUG:
+            self.moves = moves
 
-        self.best_direction = self._find_best_direction()
+        self.best_direction = self._find_best_direction(moves)
+        self.best_node = moves[self.best_direction]
+        self.best_result = self.best_node.get_result()
 
-    def _find_best_direction(self) -> models.Direction:
+    def _find_best_direction(
+            self, moves: Mapping[models.Direction,
+                                 DecisionNode]) -> models.Direction:
         best_value = None
         best_direction = None
         for d in models.CARDINAL_FOUR:
-            value = self.moves[d].node_evaluate(self.snk_id)
+            value = moves[d].node_evaluate(self.snk_id)
             if best_value is None or value > best_value:
                 best_direction = d
                 best_value = value
         return best_direction
 
     def get_result(self) -> Result:
-        return self.moves[self.best_direction].get_result()
+        return self.best_result
 
     @classmethod
-    def _process_turn(cls, sim:Simulation, depth:int) -> DecisionNode:
+    def _process_turn(cls, sim: Simulation, depth: int) -> DecisionNode:
         sim.do_turn()
         if depth <= 0:
             node = LeafNode(sim)
-            sim.undo_turn()
-            return node
-        node = cls._process_snk_id_at_depth(sim, 0, depth)
+        else:
+            node = cls._process_snk_id_at_depth(sim, 0, depth)
         sim.undo_turn()
         return node
 
     @classmethod
     def _process_snk_id_at_depth(cls, sim: Simulation, snk_id: int,
-                      depth: int) -> DecisionNode:
+                                 depth: int) -> DecisionNode:
         # Base condition, if we did all the snakes then do a turn.
         if snk_id >= len(sim.snake_ids):
             node = cls._process_turn(sim, depth - 1)

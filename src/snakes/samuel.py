@@ -30,7 +30,7 @@ class Samuel(BattlesnakeServer):
         elif data.you.latency < data.game.timeout * 0.1:
             self.calculation_depth += 1
 
-        self.calculation_depth = min(self.calculation_depth, 5)
+        self.calculation_depth = min(max(self.calculation_depth, 1), 4)
 
     def handle_move(self, data: models.Data) -> models.Direction:
         self.update_calculation_depth(data)

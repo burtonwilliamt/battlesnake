@@ -5,14 +5,6 @@ import config
 
 from src.planning.simulation import Simulation
 
-# When I move, can I win
-# If I move here, can some one make me I lose?
-# When I move can I make someone die?
-# When a given snake moves can they make another snake die?
-# What do we imagine the other snakes do?
-
-c_f = models.CARDINAL_FOUR
-
 
 def pack_to_bits(*args, bits=8) -> int:
     max_val = (1 << bits) - 1
@@ -39,7 +31,7 @@ class Result:
         if config.DEBUG:
             self.sim_render = sim.render()
 
-    def evaluate(self, snk_id: str) -> int:
+    def evaluate_for(self, snk_id: str) -> int:
         # | 8 bits      | 8 bits        | 8 bits    | 8 bits    |
         # | turns alive | # dead snakes | my_length | my health |
         # Basically:
@@ -69,60 +61,40 @@ class DecisionNode:
     def get_result(self) -> Result:
         raise NotImplementedError
 
-    def node_evaluate(self, snk_id: int) -> int:
-        result = self.get_result()
-        return result.evaluate(snk_id)
+    def node_evaluate_for(self, snk_id: int) -> int:
+        return self.get_result().evaluate_for(snk_id)
 
 
 class LeafNode(DecisionNode):
 
+    ResultType = Result
+
     def __init__(self, sim: Simulation):
-        self.result = Result(sim)
-        self.turn = sim.turn
+        self._result = self.ResultType(sim)
 
     def get_result(self) -> Result:
-        return self.result
+        return self._result
 
 
 class SnakeDecision(DecisionNode):
 
-    def __init__(self, *, snk_id: int, turn: int,
-                 moves: Mapping[models.Direction, DecisionNode]):
-        self.snk_id = snk_id
-        self.turn = turn
+    LeafNodeType = LeafNode
 
-        for d in models.CARDINAL_FOUR:
-            if d not in moves:
-                raise AssertionError(
-                    'The moves mapping should have all directions.')
-        self.moves = None
-        if config.DEBUG:
-            self.moves = moves
-
-        self.best_direction = self._find_best_direction(moves)
-        self.best_node = moves[self.best_direction]
-        self.best_result = self.best_node.get_result()
-
-    def _find_best_direction(
-            self, moves: Mapping[models.Direction,
-                                 DecisionNode]) -> models.Direction:
-        best_value = None
-        best_direction = None
-        for d in models.CARDINAL_FOUR:
-            value = moves[d].node_evaluate(self.snk_id)
-            if best_value is None or value > best_value:
-                best_direction = d
-                best_value = value
-        return best_direction
+    def __init__(self, *, best_result, best_direction):
+        self._best_direction = best_direction
+        self._best_result = best_result
 
     def get_result(self) -> Result:
-        return self.best_result
+        return self._best_result
+
+    def get_best_direction(self) -> models.Direction:
+        return self._best_direction
 
     @classmethod
     def _process_turn(cls, sim: Simulation, depth: int) -> DecisionNode:
         sim.do_turn()
         if depth <= 0:
-            node = LeafNode(sim)
+            node = cls.LeafNodeType(sim)
         else:
             node = cls._process_snk_id_at_depth(sim, 0, depth)
         sim.undo_turn()
@@ -133,25 +105,31 @@ class SnakeDecision(DecisionNode):
                                  depth: int) -> DecisionNode:
         # Base condition, if we did all the snakes then do a turn.
         if snk_id >= len(sim.snake_ids):
-            node = cls._process_turn(sim, depth - 1)
-            return node
+            return cls._process_turn(sim, depth - 1)
 
         # If this snake is dead, just let the other snakes play.
         if sim.snake_is_dead(snk_id):
-            node = cls._process_snk_id_at_depth(sim, snk_id + 1, depth)
-            return node
+            return cls._process_snk_id_at_depth(sim, snk_id + 1, depth)
 
         # Try moving each direction.
-        moves = {}
+        best_value = None
+        best_direction = None
+        best_result = None
         for d in models.CARDINAL_FOUR:
             if sim.is_obvious_death(snk_id, d):
-                moves[d] = LeafNode(sim)
+                child = cls.LeafNodeType(sim)
             else:
                 sim.do_move(snk_id, d)
-                moves[d] = cls._process_snk_id_at_depth(sim, snk_id + 1, depth)
+                child = cls._process_snk_id_at_depth(sim, snk_id + 1, depth)
                 sim.undo_move(snk_id)
 
-        return cls(snk_id=snk_id, turn=sim.turn, moves=moves)
+            value = child.node_evaluate_for(snk_id)
+            if best_value is None or value > best_value:
+                best_direction = d
+                best_value = value
+                best_result = child.get_result()
+
+        return cls(best_result=best_result, best_direction=best_direction)
 
     @classmethod
     def make_tree(cls, sim: Simulation, depth: int):
@@ -162,4 +140,4 @@ def ideal_direction(board: models.Board, depth=3) -> models.Direction:
     # TODO: require snk_id
     sim = Simulation(board, max_depth=depth)
     root = SnakeDecision.make_tree(sim, depth)
-    return root.best_direction
+    return root.get_best_direction()

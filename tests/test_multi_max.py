@@ -44,27 +44,27 @@ class TestMultiMax(unittest.TestCase):
             },
         ).to_board())
         res1 = multi_max.Result(sim)
-        self.assertEqual(bin(res1.evaluate(0)),
+        self.assertEqual(bin(res1.evaluate_for(0)),
                          bin(multi_max.pack_to_bits(0, 0, 4, 50)))
-        self.assertEqual(bin(res1.evaluate(1)),
+        self.assertEqual(bin(res1.evaluate_for(1)),
                          bin(multi_max.pack_to_bits(0, 0, 3, 49)))
 
         sim.do_move(0, models.LEFT)
         sim.do_move(1, models.UP)
         sim.do_turn()
         res2 = multi_max.Result(sim)
-        self.assertEqual(bin(res2.evaluate(0)),
+        self.assertEqual(bin(res2.evaluate_for(0)),
                          bin(multi_max.pack_to_bits(1, 0, 4, 49)))
-        self.assertEqual(bin(res2.evaluate(1)),
+        self.assertEqual(bin(res2.evaluate_for(1)),
                          bin(multi_max.pack_to_bits(1, 0, 3, 48)))
 
         sim.do_move(0, models.LEFT)
         sim.do_move(1, models.RIGHT)
         sim.do_turn()
         res3 = multi_max.Result(sim)
-        self.assertEqual(bin(res3.evaluate(0)),
+        self.assertEqual(bin(res3.evaluate_for(0)),
                          bin(multi_max.pack_to_bits(2, 0, 4, 48)))
-        self.assertEqual(bin(res3.evaluate(1)),
+        self.assertEqual(bin(res3.evaluate_for(1)),
                          bin(multi_max.pack_to_bits(2, 0, 3, 47)))
 
 

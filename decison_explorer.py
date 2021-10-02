@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterable, Mapping
 import curses
 
 import src.planning.multi_max as multi_max
@@ -23,6 +23,26 @@ Turn: 3  Snake: 1 Choice: up
 '''
 
 
+class DebugResult(multi_max.Result):
+
+    def __init__(self, sim: simulation.Simulation):
+        super().__init__(sim)
+        self.debug_sim_render = sim.render()
+
+
+class DebugLeafNode(multi_max.LeafNode):
+    ResultType = DebugResult
+
+
+class DebugSnakeDecision(multi_max.DecisionNode):
+    LeafNodeType = DebugLeafNode
+
+    def __init__(self, *, snk_id: int, moves: Mapping[models.Direction,
+                                                      multi_max.DecisionNode]):
+        super().__init__(snk_id=snk_id, moves=moves)
+        self.debug_move_options = moves
+
+
 class DecisionExplorer:
     DIRECTION_ORDER = (models.LEFT, models.UP, models.RIGHT, models.DOWN)
 
@@ -43,7 +63,7 @@ class DecisionExplorer:
     def _max_depth(self, root: multi_max.DecisionNode) -> int:
         if isinstance(root, multi_max.LeafNode):
             return 1
-        return max([self._max_depth(node) for node in root.moves.values()])
+        return max([self._max_depth(node) for node in root._moves.values()])
 
     def addstr_row(self, items: Iterable[str]):
         self.stdscr.addstr('|')

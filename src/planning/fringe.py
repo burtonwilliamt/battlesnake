@@ -42,8 +42,8 @@ class ChildGenerator:
 
 class TimedBFS:
 
-    def __init__(self, root_node:ChildGenerator, limit:int):
-        self.termination_time = time.time() + limit*.001
+    def __init__(self, root_node:ChildGenerator, limit_ms:int):
+        self.termination_time = time.time() + limit_ms*.001
 
         self.q = list()
         self.q.append(root_node)
@@ -54,8 +54,8 @@ class TimedBFS:
         return False
 
     def run(self):
-        while not self.out_of_time():
-            node = self.q.pop()
+        while not self.out_of_time() and len(self.q) > 0:
+            node = self.q.pop(0)
             for child in node.children():
                 self.q.append(child)
 

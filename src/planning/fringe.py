@@ -1,4 +1,5 @@
 from typing import Iterable, Tuple, List, Mapping
+import signal
 import time
 import copy
 
@@ -35,6 +36,8 @@ from src.planning.simulation import Simulation
 # This implies that we want to explore breadth first, not depth first
 
 
+
+
 class ChildGenerator:
     def children(self) -> Iterable['ChildGenerator']:
         pass
@@ -43,21 +46,29 @@ class ChildGenerator:
 class TimedBFS:
 
     def __init__(self, root_node:ChildGenerator, limit_ms:int):
-        self.termination_time = time.time() + limit_ms*.001
+        self.limit_ms = limit_ms
 
         self.q = list()
         self.q.append(root_node)
 
-    def out_of_time(self) -> bool:
-        if time.time() >= self.termination_time:
-            return True
-        return False
-
     def run(self):
-        while not self.out_of_time() and len(self.q) > 0:
-            node = self.q.pop(0)
-            for child in node.children():
-                self.q.append(child)
+        def handler(signum, frame):
+            raise TimeoutError('Ok, we\'re out of time. Wrap it up.')
+
+        # Set the signal handler and an alarm
+        signal.signal(signal.SIGALRM, handler)
+        # Leave one ms to cleanup at the end
+        signal.setitimer(signal.ITIMER_REAL, .001 * (self.limit_ms - 1))
+
+        try:
+            while len(self.q) > 0:
+                node = self.q.pop(0)
+                for child in node.children():
+                    self.q.append(child)
+        except TimeoutError:
+            return
+        finally:
+            signal.setitimer(signal.ITIMER_REAL, 0)
 
 
 def snake_decision_or_board_state(sim:Simulation, snk_id: int):

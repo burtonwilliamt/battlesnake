@@ -2,7 +2,9 @@ import unittest
 from typing import Iterable
 import time
 
-from src.planning.fringe import TimedBFS, ChildGenerator
+from src.planning.fringe import TimedBFS, ChildGenerator, BoardState
+from src.planning.simulation import Simulation
+from tests.board_builder import BoardBuilder
 
 
 def make_root(depth=10, delay_ms=1, branching=1):
@@ -64,3 +66,28 @@ class TestFringe(unittest.TestCase):
 
         # the nodes should still be in order
         self.assertSequenceEqual(root.order_explored, range(len(root.order_explored)))
+
+    def test_snake_decisions(self):
+        board = BoardBuilder(
+            '''
+            v....vv
+            va<..Cv
+            >>^...d
+            .*.....
+            .....*.
+            ...>>b.
+            ''', {
+                'a': 51,
+                'b': 100,
+                'c': 2,
+                'd': 42,
+            }).to_board()
+        sim = Simulation(board, max_depth=3)
+        root = BoardState(sim)
+        bfs = TimedBFS(root, 1000)
+        start = time.time()
+        bfs.run()
+        end = time.time()
+        print(f'Took {(end-start)*1000}ms')
+        print(f'We expanded {bfs.num_expanded}')
+        print(f'There are {len(bfs.q)} elements in the queue.')

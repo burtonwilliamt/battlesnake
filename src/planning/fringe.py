@@ -8,7 +8,6 @@ import config
 
 from src.planning.simulation import Simulation
 
-
 # from one board state with 4 snakes, there are 4 * 4 * 4 * 4 possible new board states
 
 # we can assume every snake will not double back on their "neck"
@@ -36,58 +35,73 @@ from src.planning.simulation import Simulation
 # This implies that we want to explore breadth first, not depth first
 
 
-
-
 class ChildGenerator:
+
     def children(self) -> Iterable['ChildGenerator']:
         pass
 
 
 class TimedBFS:
+    CLEANUP_TIME_MS = 2
 
-    def __init__(self, root_node:ChildGenerator, limit_ms:int):
+    def __init__(self, root_node: ChildGenerator, limit_ms: int):
         self.limit_ms = limit_ms
+        assert (self.limit_ms > self.CLEANUP_TIME_MS,
+                f'Limit must be greater than {self.CLEANUP_TIME_MS}ms.')
 
         self.q = list()
         self.q.append(root_node)
+        self.num_expanded = 0
 
     def run(self):
+
         def handler(signum, frame):
             raise TimeoutError('Ok, we\'re out of time. Wrap it up.')
 
         # Set the signal handler and an alarm
         signal.signal(signal.SIGALRM, handler)
-        # Leave one ms to cleanup at the end
-        signal.setitimer(signal.ITIMER_REAL, .001 * (self.limit_ms - 1))
+        # Leave time to cleanup at the end
+        signal.setitimer(signal.ITIMER_REAL,
+                         .001 * (self.limit_ms - self.CLEANUP_TIME_MS))
 
         try:
             while len(self.q) > 0:
                 node = self.q.pop(0)
                 for child in node.children():
                     self.q.append(child)
+                self.num_expanded += 1
         except TimeoutError:
             return
         finally:
             signal.setitimer(signal.ITIMER_REAL, 0)
 
 
-def snake_decision_or_board_state(sim:Simulation, snk_id: int):
+def snake_decision_or_board_state(sim: Simulation, snk_id: int):
     # Base condition, if we did all the snakes then do a turn.
     if snk_id >= len(sim.snake_ids):
-        sim.do_turn()
+        try:
+            sim.do_turn()
+        except AssertionError:
+            print(sim.turn)
+            print(sim.snake_is_dead(1))
+            print(sim._t_move_choices[0:sim.turn+1])
+            print(sim._t_health[0:sim.turn+1])
+            raise
+
         return BoardState(sim)
     else:
         return SnakeDecision(sim, snk_id)
 
 
 class SnakeDecision(ChildGenerator):
-    def __init__(self, sim:Simulation, snk_id: int):
+
+    def __init__(self, sim: Simulation, snk_id: int):
+        self.indent = '\t'*snk_id
         self.sim = sim
         self.snk_id = snk_id
         self.moves = None
-        self.is_dead = sim.snake_is_dead(self.snk_id)
 
-    def move(self, direction:models.Direction) -> ChildGenerator:
+    def move(self, direction: models.Direction) -> ChildGenerator:
         child_sim = copy.deepcopy(self.sim)
         child_sim.do_move(self.snk_id, direction)
         child = snake_decision_or_board_state(child_sim, self.snk_id + 1)
@@ -96,14 +110,22 @@ class SnakeDecision(ChildGenerator):
     def make_moves(self) -> None:
         self.moves = {}
         # If this snake is dead, just let the other snakes play.
-        if self.is_dead:
-            child = snake_decision_or_board_state(self.sim, self.snk_id+1)
+        if self.sim.snake_is_dead(self.snk_id):
+            child = snake_decision_or_board_state(self.sim, self.snk_id + 1)
             for direction in models.CARDINAL_FOUR:
                 self.moves[direction] = child
+            return
 
         # Try moving each direction.
         for direction in models.CARDINAL_FOUR:
             self.moves[direction] = self.move(direction)
+
+    def safe_children(self, child:ChildGenerator) -> Iterable[ChildGenerator]:
+        if isinstance(child, BoardState):
+            yield child
+        else:
+            for sub_child in child.children():
+                yield sub_child
 
     def children(self) -> Iterable[ChildGenerator]:
         # If we don't have any moves yet, generate them
@@ -111,22 +133,21 @@ class SnakeDecision(ChildGenerator):
             self.make_moves()
 
         # If we are dead then all moves have equivalent value
-        if self.is_dead:
-            for sub_child in self.moves[models.UP].children():
+        if self.sim.snake_is_dead(self.snk_id):
+            child = self.moves[models.UP]
+            for sub_child in self.safe_children(self.moves[models.UP]):
                 yield sub_child
             return
 
-        for child in self.moves.items():
+        for direction, child in self.moves.items():
             # If we are the last SnakeDecision node, yield children directly
-            if isinstance(child, BoardState):
-                yield child
-                continue
-            for sub_child in child.children():
+            for sub_child in self.safe_children(child):
                 yield sub_child
 
 
 class BoardState(ChildGenerator):
-    def __init__(self, sim:Simulation):
+
+    def __init__(self, sim: Simulation):
         self.sim = copy.deepcopy(sim)
         self.root = None
 

@@ -1,15 +1,30 @@
 import cProfile
 import tracemalloc
-from src.planning.fringe import TimedBFS
-from tests.test_fringe import make_root
+
+from src.planning.fringe import TimedBFS, BoardState
+from src.planning.simulation import Simulation
+from tests.board_builder import BoardBuilder
 
 
 def actual_work():
-    root = make_root(depth = 10, branching=2, delay_ms=1)
-    bfs = TimedBFS(root, 500)
+    board = BoardBuilder(
+        '''
+        v....vv
+        va<..Cv
+        >>^...d
+        .*.....
+        .....*.
+        ...>>b.
+        ''', {
+            'a': 51,
+            'b': 100,
+            'c': 2,
+            'd': 42,
+        }).to_board()
+    sim = Simulation(board, max_depth=3)
+    root = BoardState(sim)
+    bfs = TimedBFS(root, 1000)
     bfs.run()
-    print(f'explored: {len(root.order_explored)}')
-    print(f'slept: {root.time_slept}')
 
 
 def main():

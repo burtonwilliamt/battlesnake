@@ -1,8 +1,8 @@
 import cProfile
 import tracemalloc
 
-from src.planning.fringe import TimedBFS, BoardState
-from src.planning.simulation import Simulation
+from src.planning.fringe import TimedBFS, BoardStateNode
+from src.planning.simulation2 import BoardState
 from tests.board_builder import BoardBuilder
 
 
@@ -21,8 +21,8 @@ def actual_work():
             'c': 2,
             'd': 42,
         }).to_board()
-    sim = Simulation(board, max_depth=3)
-    root = BoardState(sim)
+    board_state = BoardState.from_board(board, max_depth=3)
+    root = BoardStateNode(board_state)
     bfs = TimedBFS(root, 1000)
     bfs.run()
 

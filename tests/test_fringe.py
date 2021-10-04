@@ -2,8 +2,8 @@ import unittest
 from typing import Iterable
 import time
 
-from src.planning.fringe import TimedBFS, ChildGenerator, BoardState
-from src.planning.simulation import Simulation
+from src.planning.fringe import TimedBFS, ChildGenerator, BoardStateNode
+from src.planning.simulation2 import BoardState
 from tests.board_builder import BoardBuilder
 
 
@@ -82,9 +82,9 @@ class TestFringe(unittest.TestCase):
                 'c': 2,
                 'd': 42,
             }).to_board()
-        sim = Simulation(board, max_depth=3)
-        root = BoardState(sim)
-        bfs = TimedBFS(root, 1000)
+        board_state = BoardState.from_board(board, max_depth=3)
+        root = BoardStateNode(board_state)
+        bfs = TimedBFS(root, 500)
         start = time.time()
         bfs.run()
         end = time.time()

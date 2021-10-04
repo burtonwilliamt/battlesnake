@@ -96,7 +96,6 @@ def snake_decision_or_board_state(sim: Simulation, snk_id: int):
 class SnakeDecision(ChildGenerator):
 
     def __init__(self, sim: Simulation, snk_id: int):
-        self.indent = '\t'*snk_id
         self.sim = sim
         self.snk_id = snk_id
         self.moves = None
@@ -139,8 +138,7 @@ class SnakeDecision(ChildGenerator):
                 yield sub_child
             return
 
-        for direction, child in self.moves.items():
-            # If we are the last SnakeDecision node, yield children directly
+        for child in self.moves.values():
             for sub_child in self.safe_children(child):
                 yield sub_child
 
@@ -148,7 +146,7 @@ class SnakeDecision(ChildGenerator):
 class BoardState(ChildGenerator):
 
     def __init__(self, sim: Simulation):
-        self.sim = copy.deepcopy(sim)
+        self.sim = sim
         self.root = None
 
     def children(self) -> Iterable[ChildGenerator]:

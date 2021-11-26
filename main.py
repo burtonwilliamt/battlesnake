@@ -8,11 +8,7 @@ import cherrypy
 from src.snakes.default import BattlesnakeServer
 from src.snakes.igor import Igor
 from src.snakes.samuel import Samuel
-from src.snakes.medusa import Medusa
-"""
-This is a simple Battlesnake server written in Python.
-For instructions see https://github.com/BattlesnakeOfficial/starter-snake-python/README.md
-"""
+
 
 def snake_servers() -> Mapping[str, BattlesnakeServer]:
     """Return all the snake servers this webserver should host
@@ -24,10 +20,10 @@ def snake_servers() -> Mapping[str, BattlesnakeServer]:
     return {
         '/samuel': Samuel(),
         '/igor': Igor(),
-        '/medusa': Medusa(),
     }
 
-def config_cherrypy(port:int, auto_reload:bool):
+
+def config_cherrypy(port: int, auto_reload: bool):
     cherrypy.config.update({'server.socket_host': '0.0.0.0'})
     cherrypy.config.update({
         'server.socket_port': int(os.environ.get('PORT', port)),
@@ -46,7 +42,7 @@ def main(argv):
 
     print(opts)
     for opt, arg in opts:
-        if opt in('-p', '--port'):
+        if opt in ('-p', '--port'):
             port = int(arg)
         elif opt in ('-r', '--auto_reload'):
             auto_reload = True
@@ -58,6 +54,7 @@ def main(argv):
     print('Starting Battlesnake Server...')
     cherrypy.engine.start()
     cherrypy.engine.block()
+
 
 if __name__ == '__main__':
     main(sys.argv[1:])

@@ -8,6 +8,8 @@ MAX_HEALTH = 100
 
 class SimpleSnake:
 
+    __slots__ = ('health', 'body')
+
     def __init__(self, health: int, body: List[Tuple[int, int]]):
         self.health = health
         self.body = body
@@ -22,6 +24,8 @@ class BoardState:
     You can access attributes on this state, or
     create a new mutated version using do_turn.
     """
+
+    __slots__ = ('height', 'width', 'snakes', 'food', 'turn', 'max_depth')
 
     def __init__(self, height: int, width: int, snakes: Tuple[SimpleSnake],
                  food: List[Tuple[int, int]], turn: int, max_depth: int):

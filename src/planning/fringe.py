@@ -65,8 +65,11 @@ class TimedBFS:
         try:
             while len(self.q) > 0:
                 node = self.q.pop(0)
+                count = 0
                 for child in node.children():
+                    count += 1
                     self.q.append(child)
+                print(f'Child made {count} children')
                 self.num_expanded += 1
         except TimeoutError:
             return
@@ -89,6 +92,9 @@ class SnakeDecision(ChildGenerator):
         self.snk_id = snk_id
         self.moves = None
 
+    def is_dead(self) -> bool:
+        return self.builder.board.snakes[self.snk_id].health == 0
+
     def move(self, direction: models.Direction) -> ChildGenerator:
         new_builder = self.builder.do_move(self.snk_id, direction)
         return snake_decision_or_board_state(new_builder, self.snk_id + 1)
@@ -96,7 +102,7 @@ class SnakeDecision(ChildGenerator):
     def make_moves(self) -> None:
         self.moves = {}
         # If this snake is dead, just let the other snakes play.
-        if self.builder.board.snakes[self.snk_id].health == 0:
+        if self.is_dead():
             child = snake_decision_or_board_state(self.builder, self.snk_id + 1)
             for direction in models.CARDINAL_FOUR:
                 self.moves[direction] = child
@@ -119,13 +125,15 @@ class SnakeDecision(ChildGenerator):
             self.make_moves()
 
         # If we are dead then all moves have equivalent value
-        if self.builder.board.snakes[self.snk_id].health == 0:
+        if self.is_dead():
+            print('Dead')
             child = self.moves[models.UP]
             for sub_child in self.safe_children(self.moves[models.UP]):
                 yield sub_child
             return
 
         for child in self.moves.values():
+            print('Alive')
             for sub_child in self.safe_children(child):
                 yield sub_child
 

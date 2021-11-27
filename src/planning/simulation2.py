@@ -1,7 +1,6 @@
 from typing import Iterable, Mapping, List, Tuple
 
 import src.models as models
-from src.planning.temporal_body import TemporalBody
 
 MAX_HEALTH = 100
 

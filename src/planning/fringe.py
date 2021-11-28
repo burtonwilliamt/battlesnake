@@ -1,10 +1,10 @@
 from typing import Iterable, Tuple, List, Mapping
-import signal
+from src.planning.timed_bfs import ChildGenerator
 import copy
 
 import src.models as models
 
-from src.planning.simulation2 import BoardState, TurnBuilder
+from src.planning.simulation import BoardState, TurnBuilder
 
 # from one board state with 4 snakes, there are 4 * 4 * 4 * 4 possible new board states
 
@@ -33,48 +33,6 @@ from src.planning.simulation2 import BoardState, TurnBuilder
 # This implies that we want to explore breadth first, not depth first
 
 
-class ChildGenerator:
-
-    def children(self) -> Iterable['ChildGenerator']:
-        pass
-
-
-class TimedBFS:
-    CLEANUP_TIME_MS = 2
-
-    def __init__(self, root_node: ChildGenerator, limit_ms: int):
-        self.limit_ms = limit_ms
-        assert (self.limit_ms > self.CLEANUP_TIME_MS,
-                f'Limit must be greater than {self.CLEANUP_TIME_MS}ms.')
-
-        self.q = list()
-        self.q.append(root_node)
-        self.num_expanded = 0
-
-    def run(self):
-
-        def handler(signum, frame):
-            raise TimeoutError('Ok, we\'re out of time. Wrap it up.')
-
-        # Set the signal handler and an alarm
-        signal.signal(signal.SIGALRM, handler)
-        # Leave time to cleanup at the end
-        signal.setitimer(signal.ITIMER_REAL,
-                         .001 * (self.limit_ms - self.CLEANUP_TIME_MS))
-
-        try:
-            while len(self.q) > 0:
-                node = self.q.pop(0)
-                count = 0
-                for child in node.children():
-                    count += 1
-                    self.q.append(child)
-                print(f'Child made {count} children')
-                self.num_expanded += 1
-        except TimeoutError:
-            return
-        finally:
-            signal.setitimer(signal.ITIMER_REAL, 0)
 
 
 def snake_decision_or_board_state(builder: TurnBuilder, snk_id: int):

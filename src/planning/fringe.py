@@ -1,10 +1,9 @@
 from typing import Iterable, Tuple, List, Mapping
 from src.planning.timed_bfs import ChildGenerator
-import copy
 
 import src.models as models
 
-from src.planning.simulation import BoardState, TurnBuilder
+from src.planning.simulation import BoardState
 
 # from one board state with 4 snakes, there are 4 * 4 * 4 * 4 possible new board states
 
@@ -32,6 +31,25 @@ from src.planning.simulation import BoardState, TurnBuilder
 #      considering moving left
 # This implies that we want to explore breadth first, not depth first
 
+
+class TurnBuilder:
+
+    def __init__(self, board: BoardState, moves: Tuple[models.Direction]):
+        self.board = board
+        self.moves = moves
+
+    def do_move(self, snk_id: int, d: models.Direction) -> 'TurnBuilder':
+        assert self.board.turn < BoardState.MAX_LOOKAHEAD, 'Cannot call do_move when simulation is at max depth.'
+        assert snk_id == len(self.moves), 'Must declare snake moves in order'
+        assert snk_id >= 0 and snk_id < len(
+            self.board.snakes), 'Snake id must be in range'
+        assert ((self.board.snakes[snk_id].health != 0 and d is not None) or
+                (self.board.snakes[snk_id].health == 0 and
+                 d is None)), 'Dead snakes move None'
+        return TurnBuilder(self.board, tuple((*self.moves, d)))
+
+    def do_turn(self) -> BoardState:
+        return self.board.do_turn(self.moves)
 
 
 
@@ -61,7 +79,8 @@ class SnakeDecision(ChildGenerator):
         self.moves = {}
         # If this snake is dead, just let the other snakes play.
         if self.is_dead():
-            child = snake_decision_or_board_state(self.builder, self.snk_id + 1)
+            new_builder = self.builder.do_move(self.snk_id, None)
+            child = snake_decision_or_board_state(new_builder, self.snk_id + 1)
             for direction in models.CARDINAL_FOUR:
                 self.moves[direction] = child
             return
@@ -84,14 +103,14 @@ class SnakeDecision(ChildGenerator):
 
         # If we are dead then all moves have equivalent value
         if self.is_dead():
-            print('Dead')
+            #print('Dead')
             child = self.moves[models.UP]
             for sub_child in self.safe_children(self.moves[models.UP]):
                 yield sub_child
             return
 
         for child in self.moves.values():
-            print('Alive')
+            #print('Alive')
             for sub_child in self.safe_children(child):
                 yield sub_child
 

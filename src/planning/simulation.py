@@ -2,7 +2,6 @@ from typing import Iterable, Mapping, List, Tuple
 
 import src.models as models
 
-MAX_HEALTH = 100
 
 
 class SimpleSnake:
@@ -23,26 +22,27 @@ class BoardState:
     You can access attributes on this state, or
     create a new mutated version using do_turn.
     """
+    MAX_LOOKAHEAD = 10
+    MAX_HEALTH = 100
 
     __slots__ = ('height', 'width', 'snakes', 'food', 'turn', 'max_depth')
 
     def __init__(self, height: int, width: int, snakes: Tuple[SimpleSnake],
-                 food: List[Tuple[int, int]], turn: int, max_depth: int):
+                 food: List[Tuple[int, int]], turn: int):
         self.height = height
         self.width = width
         self.snakes = snakes
         self.food = food
         self.turn = turn
-        self.max_depth = max_depth
 
     @classmethod
-    def from_board(cls, board:models.Board, max_depth:int) -> 'BoardState':
+    def from_board(cls, board: models.Board) -> 'BoardState':
         snakes = []
         for heavy_snake in board.snakes:
             body = [(segment.x, segment.y) for segment in heavy_snake.body]
             snakes.append(SimpleSnake(heavy_snake.health, body))
         food = [(food.x, food.y) for food in board.food]
-        return BoardState(board.height, board.width, snakes, food, 0, max_depth)
+        return BoardState(board.height, board.width, snakes, food, 0)
 
     def copy(self) -> 'BoardState':
         return BoardState(
@@ -51,13 +51,13 @@ class BoardState:
             tuple(snake.copy() for snake in self.snakes),
             list(self.food),
             self.turn,
-            self.max_depth,
         )
 
     def _actually_do_turn(self, moves: Tuple[models.Direction]) -> None:
-        assert (self.turn < self.max_depth,
-                'Cannot call do_turn when simulation is at max depth.')
-        assert (len(moves) == len(self.snakes), 'All snakes need a move.')
+        assert self.turn < self.MAX_LOOKAHEAD, 'Cannot call do_turn when simulation is at max depth.'
+        if len(moves) != len(self.snakes):
+            print(f'Expected {len(self.snakes)} got {len(moves)}')
+        assert len(moves) == len(self.snakes), 'All snakes need a move.'
         self._moveSnakes(moves)
 
         self._reduceSnakeHealth()
@@ -98,7 +98,7 @@ class BoardState:
 
                 if snake.body[0][0] == food[0] and snake.body[0][1] == food[1]:
                     food_eaten = True
-                    snake.health = MAX_HEALTH
+                    snake.health = self.MAX_HEALTH
                     snake.body.append(snake.body[-1])
             if food_eaten:
                 self.food.pop(i)
@@ -110,7 +110,7 @@ class BoardState:
             if snake.health == 0:
                 continue
             # Check for bounds
-            if self._snakeIsOutOfBounds:
+            if self._snakeIsOutOfBounds(snake):
                 snake.health = 0
 
         # All remaining eliminations happen simultaneously
@@ -129,7 +129,7 @@ class BoardState:
 
         # Kill snakes that collided
         for snake in collisions:
-            self.snake.health = 0
+            snake.health = 0
 
     def _snakeIsOutOfBounds(self, snake: SimpleSnake):
         x = snake.body[0][0]
@@ -155,23 +155,3 @@ class BoardState:
                 return True
         return False
 
-
-class TurnBuilder:
-
-    def __init__(self, board: BoardState, moves: Tuple[models.Direction]):
-        self.board = board
-        self.moves = moves
-
-    def do_move(self, snk_id: int, d: models.Direction) -> 'TurnBuilder':
-        assert (self.board.turn < self.board.max_depth,
-                'Cannot call do_move when simulation is at max depth.')
-        assert (snk_id == len(self.moves), 'Must declare snake moves in order')
-        assert (snk_id >= 0 and
-                snk_id < len(self.board.snakes), 'Snake id must be in range')
-        assert ((self.board.snakes[snk_id].health != 0 and d is not None) or
-                (self.board.snakes[snk_id].health == 0 and d is None),
-                'Dead snakes move None')
-        return TurnBuilder(self.board, tuple((*self.moves, d)))
-
-    def do_turn(self) -> BoardState:
-        return self.board.do_turn(self.moves)

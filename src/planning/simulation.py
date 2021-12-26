@@ -44,19 +44,20 @@ class BoardState:
         food = [(food.x, food.y) for food in board.food]
         return BoardState(board.height, board.width, snakes, food, 0)
 
+    def _copy_snakes(self) -> Tuple[SimpleSnake]:
+        return tuple(snake.copy() for snake in self.snakes)
+
     def copy(self) -> 'BoardState':
         return BoardState(
             self.height,
             self.width,
-            tuple(snake.copy() for snake in self.snakes),
+            self._copy_snakes(),
             list(self.food),
             self.turn,
         )
 
     def _actually_do_turn(self, moves: Tuple[models.Direction]) -> None:
         assert self.turn < self.MAX_LOOKAHEAD, 'Cannot call do_turn when simulation is at max depth.'
-        if len(moves) != len(self.snakes):
-            print(f'Expected {len(self.snakes)} got {len(moves)}')
         assert len(moves) == len(self.snakes), 'All snakes need a move.'
         self._moveSnakes(moves)
 

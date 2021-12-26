@@ -1,4 +1,5 @@
 from typing import Iterable
+import queue
 import signal
 
 
@@ -22,7 +23,7 @@ class TimedBFS:
         self.limit_ms = limit_ms
         assert self.limit_ms > self.CLEANUP_TIME_MS, f'Limit must be greater than {self.CLEANUP_TIME_MS}ms.'
 
-        self.q = list()
+        self.q = queue.deque()
         self.q.append(root_node)
         self.num_expanded = 0
 
@@ -39,7 +40,7 @@ class TimedBFS:
 
         try:
             while len(self.q) > 0:
-                node = self.q.pop(0)
+                node = self.q.popleft()
                 count = 0
                 for child in node.children():
                     count += 1

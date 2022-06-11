@@ -76,6 +76,7 @@ class BoardState:
         for move, snake in zip(moves, self.snakes):
             # Skip dead snakes
             if snake.health == 0:
+                assert move is None, 'Dead snakes can\'t move.'
                 continue
 
             d = move

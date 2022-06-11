@@ -27,6 +27,13 @@ class TimedBFS:
         self.q.append(root_node)
         self.num_expanded = 0
 
+    def _main_loop(self):
+        while len(self.q) > 0:
+            node = self.q.popleft()
+            for child in node.children():
+                self.q.append(child)
+            self.num_expanded += 1
+
     def run(self):
 
         def handler(signum, frame):
@@ -39,13 +46,7 @@ class TimedBFS:
                          .001 * (self.limit_ms - self.CLEANUP_TIME_MS))
 
         try:
-            while len(self.q) > 0:
-                node = self.q.popleft()
-                count = 0
-                for child in node.children():
-                    count += 1
-                    self.q.append(child)
-                self.num_expanded += 1
+            self._main_loop()
         except TimeoutError:
             return
         finally:

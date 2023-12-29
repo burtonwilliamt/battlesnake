@@ -128,15 +128,17 @@ class TestSituations(unittest.TestCase):
     def test_simple_kill(self):
         """If you can kill a competitor, do so."""
         board = BoardBuilder(
+            # The board has to be longer than the search depth, otherwise going
+            # continuing straight would also eventually kill the opponent.
             """
-            ...a.
-            ...^b
-            ..>^^
+            .........
+            .>>a.....
+            .>b......
             """,
             {
-                "a": 5,
-                "b": 7,
+                "a": 100,
+                "b": 100,
             },
         ).to_board()
         best_dir = multi_max.ideal_direction(board, depth=3)
-        self.assertEqual(best_dir, models.RIGHT, "Snake should move right to kill.")
+        self.assertEqual(best_dir, models.DOWN, "Snake should move DOWN to kill.")

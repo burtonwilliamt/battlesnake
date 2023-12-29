@@ -10,11 +10,11 @@ class TestBoardBuilder(unittest.TestCase):
         self.assertEqual(
             BoardBuilder.str_to_grid(
                 """
-        a...
-        .b..
-        ..c.
-        ...d
-        """
+                a...
+                .b..
+                ..c.
+                ...d
+                """
             ),
             [
                 [".", ".", ".", "a"],

@@ -1,6 +1,4 @@
-from typing import List
 from enum import Enum
-from dataclasses import dataclass
 
 
 class BattlesnakeInfo:
@@ -12,7 +10,7 @@ class BattlesnakeInfo:
         color: str = "#606060",
         head: str = "default",
         tail: str = "default",
-        version: str = None,
+        version: str | None = None,
     ):
         self.author = author
         self.color = color

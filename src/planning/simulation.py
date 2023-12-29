@@ -93,6 +93,7 @@ class Simulation:
         if not (0 <= new_head.x < self.width and 0 <= new_head.y < self.height):
             # Out of bounds
             return True
+        return False
 
     def turns_alive(self, snk_id: int) -> int:
         """How long a snake has lived for. If still alive this is self.turn"""

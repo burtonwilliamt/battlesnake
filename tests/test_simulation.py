@@ -30,6 +30,7 @@ class TestSimulation(unittest.TestCase):
         for i, name in enumerate(self.sim.names):
             self.name_to_id[name] = i
 
+    # TODO: Why can't this just be sim.render()?
     def sim_to_str(self, sim: Simulation) -> str:
         grid = [["." for _ in range(sim.width)] for _ in range(sim.height)]
 
@@ -125,6 +126,21 @@ class TestSimulation(unittest.TestCase):
                 "d": 42,
             },
         )
+
+    def test_is_obvious_death(self):
+        sim = Simulation(BoardBuilder(
+            """
+            ....
+            ..>a
+            ....
+            ....
+            """,
+            {"a": 100}
+        ).to_board())
+        self.assertTrue(sim.is_obvious_death(0, models.LEFT), 'Moving onto neck should be obvious death.')
+        self.assertTrue(sim.is_obvious_death(0, models.RIGHT), 'Out of bounds move should be obvious death.')
+        self.assertFalse(sim.is_obvious_death(0, models.UP))
+        self.assertFalse(sim.is_obvious_death(0, models.DOWN))
 
     def test_move(self):
         self.sim.do_move(self.name_to_id["a"], models.UP)

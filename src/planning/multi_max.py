@@ -1,6 +1,6 @@
-from typing import Iterable, Tuple, List, Mapping
+from typing import Self
 
-import src.models as models
+from src import models
 import config
 
 from src.planning.simulation import Simulation
@@ -113,6 +113,8 @@ class SnakeDecision(DecisionNode):
         best_direction = None
         best_result = None
         for d in models.CARDINAL_FOUR:
+            # If this direction is an obvious death for the current snake, it
+            # won't need to consider the future.
             if sim.is_obvious_death(snk_id, d):
                 child = cls.LeafNodeType(sim)
             else:
@@ -129,7 +131,7 @@ class SnakeDecision(DecisionNode):
         return cls(best_result=best_result, best_direction=best_direction)
 
     @classmethod
-    def make_tree(cls, sim: Simulation, depth: int):
+    def make_tree(cls, sim: Simulation, depth: int) -> Self:
         return cls._process_snk_id_at_depth(sim, 0, depth)
 
 

@@ -36,7 +36,11 @@ class Simulation:
         self.height = board.height
 
         # Simplify the ids to 0...n-1 for array access
+        """
         live_snakes = [snk for snk in board.snakes if snk.health > 0]
+        """
+        # Treat all snakes as live for now (simplifies base-case in minimax)
+        live_snakes = [snk for snk in board.snakes]
         self.simple_ids = {}
         for i, snk in enumerate(live_snakes):
             self.simple_ids[snk.id] = i

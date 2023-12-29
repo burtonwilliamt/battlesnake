@@ -1,9 +1,8 @@
 from typing import Self
 
 from src import models
-import config
-
 from src.planning.simulation import Simulation
+import config
 
 
 def pack_to_bits(*args, bits=8) -> int:

@@ -1,6 +1,9 @@
 # Battle Snake
 This is a library and collection of snakes to the [battlesnake](https://play.battlesnake.com/) game.
 
+## Resources:
+* Combat Reptile Datadump: https://data.coreyja.com/combat-reptile_dump_2023-06-27
+
 
 ## TODO:
 * If node D is a decendent of node P, and node P is a decision node for snake i that has seen a solution to live for at least t turns, if node D has snake i as dead, and node D is at turn < t then return immediately.

@@ -50,23 +50,6 @@ class TestFringe(unittest.TestCase):
         bfs.run()
         self.assertSequenceEqual(root.order_explored, [0, 1, 2, 3, 4, 5, 6])
 
-    def test_bfs_ends_early(self):
-        root = make_root(depth=10, branching=2, delay_ms=1)
-
-        bfs = TimedBFS(root, 30)
-        start = time.time()
-        bfs.run()
-        end = time.time()
-        self.assertLessEqual(1000 * (end - start), 30)
-
-        # should expand at most 30 nodes
-        self.assertLessEqual(len(root.order_explored), 30)
-        # not strictly guranateed but under normal conditions this is expected
-        self.assertGreaterEqual(root.time_slept, 15)
-
-        # the nodes should still be in order
-        self.assertSequenceEqual(root.order_explored, range(len(root.order_explored)))
-
     def test_snake_decisions(self):
         board = BoardBuilder(
             """

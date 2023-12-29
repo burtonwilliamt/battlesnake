@@ -5,10 +5,9 @@ from src.planning.temporal_body import TemporalBody
 
 
 class TestTemporalBody(unittest.TestCase):
-
     def setUp(self):
         super().setUp()
-        self.tb = TemporalBody([1,2,3])
+        self.tb = TemporalBody([1, 2, 3])
 
     def test_len(self):
         self.assertEqual(len(self.tb), 3)
@@ -20,9 +19,9 @@ class TestTemporalBody(unittest.TestCase):
         self.assertEqual(self.tb.tail(), 3)
 
     def test_iter(self):
-        self.assertSequenceEqual([elem for elem in self.tb], [1,2,3])
+        self.assertSequenceEqual([elem for elem in self.tb], [1, 2, 3])
 
-    def check_equal(self, tb:TemporalBody, l:List[int]):
+    def check_equal(self, tb: TemporalBody, l: List[int]):
         self.assertEqual(len(tb), len(l))
         self.assertEqual(tb.head(), l[0])
         self.assertEqual(tb.tail(), l[-1])
@@ -30,46 +29,44 @@ class TestTemporalBody(unittest.TestCase):
 
     def test_add_head(self):
         self.tb.add_head(0)
-        self.check_equal(self.tb, [0,1,2,3])
+        self.check_equal(self.tb, [0, 1, 2, 3])
 
     def test_undo_add_head(self):
         self.tb.add_head(0)
         self.tb.undo_add_head()
-        self.check_equal(self.tb, [1,2,3])
+        self.check_equal(self.tb, [1, 2, 3])
 
     def test_del_tail(self):
         self.tb.del_tail()
-        self.check_equal(self.tb, [1,2])
+        self.check_equal(self.tb, [1, 2])
 
     def test_undo_del_tail(self):
         self.tb.del_tail()
-        self.check_equal(self.tb, [1,2])
+        self.check_equal(self.tb, [1, 2])
         self.tb.del_tail()
         self.check_equal(self.tb, [1])
 
         self.tb.undo_del_tail()
-        self.check_equal(self.tb, [1,2])
+        self.check_equal(self.tb, [1, 2])
         self.tb.undo_del_tail()
-        self.check_equal(self.tb, [1,2,3])
+        self.check_equal(self.tb, [1, 2, 3])
 
     def test_grow(self):
         self.tb.grow()
-        self.check_equal(self.tb, [1,2,3,3])
+        self.check_equal(self.tb, [1, 2, 3, 3])
 
     def test_undo_grow(self):
         self.tb.grow()
-        self.check_equal(self.tb, [1,2,3,3])
+        self.check_equal(self.tb, [1, 2, 3, 3])
         self.tb.undo_grow()
-        self.check_equal(self.tb, [1,2,3])
+        self.check_equal(self.tb, [1, 2, 3])
 
     def test_history_separate(self):
         self.tb.del_tail()
-        self.check_equal(self.tb, [1,2])
+        self.check_equal(self.tb, [1, 2])
         self.tb.grow()
-        self.check_equal(self.tb, [1,2,2])
+        self.check_equal(self.tb, [1, 2, 2])
         self.tb.undo_grow()
-        self.check_equal(self.tb, [1,2])
+        self.check_equal(self.tb, [1, 2])
         self.tb.undo_del_tail()
-        self.check_equal(self.tb, [1,2,3])
-
-
+        self.check_equal(self.tb, [1, 2, 3])

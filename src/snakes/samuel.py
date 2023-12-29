@@ -5,17 +5,16 @@ import config
 
 
 class Samuel(BattlesnakeServer):
-
     def __init__(self):
         self.calculation_depth = 3
 
     def handle_index(self):
         return models.BattlesnakeInfo(
-            author='drzoid',
-            color='#039903',
-            head='silly',
-            tail='round-bum',
-            version='0.5.0',
+            author="drzoid",
+            color="#039903",
+            head="silly",
+            tail="round-bum",
+            version="0.5.0",
         )
 
     def update_calculation_depth(self, data: models.Data):
@@ -37,7 +36,8 @@ class Samuel(BattlesnakeServer):
 
         # Order snakes such that you are first
         data.board.snakes.sort(key=lambda snk: snk.id != data.you.id)
-        best_direction = multi_max.ideal_direction(data.board,
-                                                   depth=self.calculation_depth)
-        print(f'Looking {self.calculation_depth} steps into future.')
+        best_direction = multi_max.ideal_direction(
+            data.board, depth=self.calculation_depth
+        )
+        print(f"Looking {self.calculation_depth} steps into future.")
         return best_direction

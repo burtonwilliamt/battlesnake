@@ -5,7 +5,6 @@ import src.models as models
 
 
 class TemporalBody:
-
     def __init__(self, body: Iterable[models.Coord]):
         self.current_body = list(body)
         self.old_tails = queue.deque()
@@ -39,4 +38,3 @@ class TemporalBody:
 
     def undo_grow(self):
         self.current_body.pop()
-

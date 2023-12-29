@@ -36,8 +36,7 @@ from src.planning.simulation import Simulation
 
 
 class ChildGenerator:
-
-    def children(self) -> Iterable['ChildGenerator']:
+    def children(self) -> Iterable["ChildGenerator"]:
         pass
 
 
@@ -46,23 +45,25 @@ class TimedBFS:
 
     def __init__(self, root_node: ChildGenerator, limit_ms: int):
         self.limit_ms = limit_ms
-        assert (self.limit_ms > self.CLEANUP_TIME_MS,
-                f'Limit must be greater than {self.CLEANUP_TIME_MS}ms.')
+        assert (
+            self.limit_ms > self.CLEANUP_TIME_MS,
+            f"Limit must be greater than {self.CLEANUP_TIME_MS}ms.",
+        )
 
         self.q = list()
         self.q.append(root_node)
         self.num_expanded = 0
 
     def run(self):
-
         def handler(signum, frame):
-            raise TimeoutError('Ok, we\'re out of time. Wrap it up.')
+            raise TimeoutError("Ok, we're out of time. Wrap it up.")
 
         # Set the signal handler and an alarm
         signal.signal(signal.SIGALRM, handler)
         # Leave time to cleanup at the end
-        signal.setitimer(signal.ITIMER_REAL,
-                         .001 * (self.limit_ms - self.CLEANUP_TIME_MS))
+        signal.setitimer(
+            signal.ITIMER_REAL, 0.001 * (self.limit_ms - self.CLEANUP_TIME_MS)
+        )
 
         try:
             while len(self.q) > 0:
@@ -84,8 +85,8 @@ def snake_decision_or_board_state(sim: Simulation, snk_id: int):
         except AssertionError:
             print(sim.turn)
             print(sim.snake_is_dead(1))
-            print(sim._t_move_choices[0:sim.turn+1])
-            print(sim._t_health[0:sim.turn+1])
+            print(sim._t_move_choices[0 : sim.turn + 1])
+            print(sim._t_health[0 : sim.turn + 1])
             raise
 
         return BoardState(sim)
@@ -94,9 +95,8 @@ def snake_decision_or_board_state(sim: Simulation, snk_id: int):
 
 
 class SnakeDecision(ChildGenerator):
-
     def __init__(self, sim: Simulation, snk_id: int):
-        self.indent = '\t'*snk_id
+        self.indent = "\t" * snk_id
         self.sim = sim
         self.snk_id = snk_id
         self.moves = None
@@ -120,7 +120,7 @@ class SnakeDecision(ChildGenerator):
         for direction in models.CARDINAL_FOUR:
             self.moves[direction] = self.move(direction)
 
-    def safe_children(self, child:ChildGenerator) -> Iterable[ChildGenerator]:
+    def safe_children(self, child: ChildGenerator) -> Iterable[ChildGenerator]:
         if isinstance(child, BoardState):
             yield child
         else:
@@ -146,7 +146,6 @@ class SnakeDecision(ChildGenerator):
 
 
 class BoardState(ChildGenerator):
-
     def __init__(self, sim: Simulation):
         self.sim = copy.deepcopy(sim)
         self.root = None

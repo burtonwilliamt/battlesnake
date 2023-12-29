@@ -49,15 +49,13 @@ class Simulation:
         # tables where each row is one turn, column is that snake's value
         num_snakes = len(live_snakes)
         # First row is starting health
-        self._t_health = [[
-            snk.health for snk in live_snakes
-        ]] + [[None] * num_snakes for _ in range(self.max_depth)]
+        self._t_health = [[snk.health for snk in live_snakes]] + [
+            [None] * num_snakes for _ in range(self.max_depth)
+        ]
 
         # self._t_move_choices[t] are choices received on turn t
         # when these choices are applied, it becomes turn t+1
-        self._t_move_choices = [
-            [None] * num_snakes for _ in range(self.max_depth + 1)
-        ]
+        self._t_move_choices = [[None] * num_snakes for _ in range(self.max_depth + 1)]
 
         # List of food that's available
         self._t_food = [list(board.food)] + [[] for _ in range(self.max_depth)]
@@ -66,12 +64,12 @@ class Simulation:
         self._t_grown_snakes = [[] for _ in range(self.max_depth + 1)]
 
         # 2d array of board state
-        #self.queue_grid = []
-        #for i in range(board.width):
-        #self.queue_grid.append([])
-        #for j in range(board.height):
-        #self.queue_grid[i].append(queue.deque())
-        #self.queue_grid[i][j].append(board.get(i, j))
+        # self.queue_grid = []
+        # for i in range(board.width):
+        # self.queue_grid.append([])
+        # for j in range(board.height):
+        # self.queue_grid[i].append(queue.deque())
+        # self.queue_grid[i][j].append(board.get(i, j))
 
     @property
     def healths(self) -> Mapping[int, int]:
@@ -81,20 +79,22 @@ class Simulation:
     def food(self) -> Iterable[models.Coord]:
         return self._t_food[self.turn]
 
-    def is_obvious_death(self, snk_id:int, d:models.Direction):
+    def is_obvious_death(self, snk_id: int, d: models.Direction):
         body = self.bodies[snk_id]
-        new_head = models.Coord({
-            'x': body.head().x + d.rel_x,
-            'y': body.head().y + d.rel_y,
-        })
+        new_head = models.Coord(
+            {
+                "x": body.head().x + d.rel_x,
+                "y": body.head().y + d.rel_y,
+            }
+        )
         if new_head == body.current_body[1]:
             # Back on the neck
             return True
-        if not ( 0 <= new_head.x < self.width and 0 <= new_head.y < self.height):
+        if not (0 <= new_head.x < self.width and 0 <= new_head.y < self.height):
             # Out of bounds
             return True
 
-    def turns_alive(self, snk_id:int) -> int:
+    def turns_alive(self, snk_id: int) -> int:
         """How long a snake has lived for. If still alive this is self.turn"""
         for i in range(self.turn, -1, -1):
             if self._t_health[i][snk_id] > 0:
@@ -103,8 +103,7 @@ class Simulation:
 
     def do_move(self, snk_id: int, d: models.Direction):
         if self.turn == self.max_depth:
-            raise AssertionError(
-                'Cannot call do_move when simulation is at max depth.')
+            raise AssertionError("Cannot call do_move when simulation is at max depth.")
         self._t_move_choices[self.turn][snk_id] = d
 
     def undo_move(self, snk_id: int):
@@ -112,21 +111,20 @@ class Simulation:
 
     def do_turn(self):
         if self.turn == self.max_depth:
-            raise AssertionError(
-                'Cannot call do_turn when simulation is at max depth.')
+            raise AssertionError("Cannot call do_turn when simulation is at max depth.")
         self._moveSnakes()
         self._reduceSnakeHealth()
         self._maybeFeedSnakes()
-        #self._maybeSpawnFood()
+        # self._maybeSpawnFood()
         self._maybeEliminateSnakes()
         self.turn += 1
 
     def undo_turn(self):
         if self.turn == 0:
-            raise AssertionError('Cannot undo beyond the start of simulation.')
+            raise AssertionError("Cannot undo beyond the start of simulation.")
         self.turn -= 1
         self._undo_maybeEliminateSnakes()
-        #self._undo_maybeSpawnFood()
+        # self._undo_maybeSpawnFood()
         self._undo_maybeFeedSnakes()
         self._undo_reduceSnakeHealth()
         self._undo_moveSnakes()
@@ -142,14 +140,16 @@ class Simulation:
 
             # Raise error if no move was submitted
             if self._t_move_choices[self.turn][snk_id] is None:
-                raise ValueError(f'Snake {snk_id} did not submit a move.')
+                raise ValueError(f"Snake {snk_id} did not submit a move.")
 
             d = self._t_move_choices[self.turn][snk_id]
             body = self.bodies[snk_id]
-            new_head = models.Coord({
-                'x': body.head().x + d.rel_x,
-                'y': body.head().y + d.rel_y,
-            })
+            new_head = models.Coord(
+                {
+                    "x": body.head().x + d.rel_x,
+                    "y": body.head().y + d.rel_y,
+                }
+            )
             body.add_head(new_head)
             body.del_tail()
 
@@ -256,11 +256,10 @@ class Simulation:
         pass
 
     def render(self) -> str:
-        grid = [['.' for _ in range(self.height)] for _ in range(self.width)]
-
+        grid = [["." for _ in range(self.height)] for _ in range(self.width)]
 
         for f in self.food:
-            grid[f.x][f.y] = '*'
+            grid[f.x][f.y] = "*"
 
         for snk_id, body in enumerate(self.bodies):
             # Don't render dead snakes
@@ -278,27 +277,27 @@ class Simulation:
                         grid[segment.x][segment.y] = name.lower()
                     continue
                 # Find one segment closer to the head
-                newer = body.current_body[i-1]
+                newer = body.current_body[i - 1]
                 # Find the move required to get closer to the head
                 to_head = (newer.x - segment.x, newer.y - segment.y)
                 # If to_head is the direction to head, how to point
                 if to_head == (1, 0):
-                    grid[segment.x][segment.y] = '>'
+                    grid[segment.x][segment.y] = ">"
                 elif to_head == (-1, 0):
-                    grid[segment.x][segment.y] = '<'
+                    grid[segment.x][segment.y] = "<"
                 elif to_head == (0, 1):
-                    grid[segment.x][segment.y] = '^'
+                    grid[segment.x][segment.y] = "^"
                 elif to_head == (0, -1):
-                    grid[segment.x][segment.y] = 'v'
+                    grid[segment.x][segment.y] = "v"
                 elif to_head == (0, 0):
                     pass
                 else:
-                    raise AssertionError('The segments aren\'t adjacent.')
+                    raise AssertionError("The segments aren't adjacent.")
 
         rows = []
         for y in reversed(range(self.height)):
             row = []
             for x in range(self.width):
                 row.append(grid[x][y])
-            rows.append(''.join(row))
-        return '\n'.join(rows) + '\n'
+            rows.append("".join(row))
+        return "\n".join(rows) + "\n"

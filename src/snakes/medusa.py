@@ -8,13 +8,13 @@ import src.models as models
 from src.snakes.default import BattlesnakeServer
 
 
-def valid_directions(data: models.Data,
-                     snk: models.Battlesnake) -> List[models.Direction]:
+def valid_directions(
+    data: models.Data, snk: models.Battlesnake
+) -> List[models.Direction]:
     return [d for d in models.CARDINAL_FOUR if data.board.can_move(snk, d)]
 
 
 class Plan:
-
     def __init__(self):
         self.steps = []
         self.next_step = 0
@@ -43,7 +43,6 @@ class LoopMode(Enum):
 
 
 class InvLoopPlan(Plan):
-
     def __init__(self, left_column: int):
         self.left_column = left_column
         self.mode = LoopMode.priming
@@ -79,7 +78,7 @@ class InvLoopPlan(Plan):
                 self.mode = LoopMode.right
                 return models.DOWN
         if self.mode == LoopMode.right:
-            print('mode right')
+            print("mode right")
             if self.needs_right_bump(data) and snk.health < snk.length + 2:
                 return models.RIGHT
             if board.can_move(snk, models.UP):
@@ -88,7 +87,7 @@ class InvLoopPlan(Plan):
             else:
                 return models.RIGHT
         elif self.mode == LoopMode.up:
-            print('mode up')
+            print("mode up")
             # If we can get food to our left, do so
             if board.get(snk.head.x - 1, snk.head.y) == models.Tile.FOOD:
                 self.mode = LoopMode.down
@@ -108,7 +107,7 @@ class InvLoopPlan(Plan):
             else:
                 return models.UP
         elif self.mode == LoopMode.down:
-            print('mode down')
+            print("mode down")
             if board.can_move(snk, models.DOWN):
                 return models.DOWN
             elif board.can_move(snk, models.RIGHT):
@@ -123,7 +122,6 @@ class InvLoopPlan(Plan):
 
 
 class LoopPlan(Plan):
-
     def __init__(self, left_column: int):
         self.left_column = left_column
         self.mode = LoopMode.priming
@@ -131,9 +129,8 @@ class LoopPlan(Plan):
     def top_food(self, data: models.Data) -> models.Coord:
         board = data.board
         # data.you.length has to be strictly greater than a saturated column
-        meta_column = math.floor(
-            (data.you.length - 1) / (2 * data.board.height))
-        print(f'meta column: {meta_column}')
+        meta_column = math.floor((data.you.length - 1) / (2 * data.board.height))
+        print(f"meta column: {meta_column}")
         for y in range(board.height - 1, -1, -1):
             for dx in (0, 1):
                 x = self.left_column + meta_column * 2 + dx
@@ -145,11 +142,11 @@ class LoopPlan(Plan):
         snk = data.you
         is_full_column = snk.length >= 2 * data.board.height - 1
         if not is_full_column:
-            print('Not full column')
+            print("Not full column")
             return False
         flat_side = math.ceil(snk.length / 2) % data.board.height == 0
         half_out = math.ceil(snk.length / 2) % data.board.height == 1
-        print(f'flat: {flat_side} half: {half_out}')
+        print(f"flat: {flat_side} half: {half_out}")
         return flat_side or half_out
 
     # If you can't move down(or are full and need food), move right repeat.
@@ -169,7 +166,7 @@ class LoopPlan(Plan):
                 self.mode = LoopMode.right
                 return models.UP
         if self.mode == LoopMode.right:
-            print('mode right')
+            print("mode right")
             if self.needs_right_bump(data) and snk.health < snk.length + 2:
                 return models.RIGHT
             if board.can_move(snk, models.DOWN):
@@ -178,7 +175,7 @@ class LoopPlan(Plan):
             else:
                 return models.RIGHT
         elif self.mode == LoopMode.down:
-            print('mode down')
+            print("mode down")
             # If we can get food to our left, do so
             if board.get(snk.head.x - 1, snk.head.y) == models.Tile.FOOD:
                 self.mode = LoopMode.up
@@ -186,15 +183,15 @@ class LoopPlan(Plan):
             # If we're hungry and can move down, do so
             food = self.top_food(data)
             if food is not None:
-                print(f'Found food at {food.x},{food.y}')
+                print(f"Found food at {food.x},{food.y}")
                 distance = abs(snk.head.x - food.x) + abs(snk.head.y - food.y)
-                loop_size = max(snk.length + 2,
-                                2 * (data.board.height - snk.head.y))
+                loop_size = max(snk.length + 2, 2 * (data.board.height - snk.head.y))
                 if snk.health < loop_size + distance and board.can_move(
-                        snk, models.DOWN):
+                    snk, models.DOWN
+                ):
                     return models.DOWN
             else:
-                print('No food')
+                print("No food")
             # If we're not hungry and we can move left, do so
             if board.can_move(snk, models.LEFT):
                 self.mode = LoopMode.up
@@ -203,7 +200,7 @@ class LoopPlan(Plan):
                 return models.DOWN
 
         elif self.mode == LoopMode.up:
-            print('mode up')
+            print("mode up")
             if board.can_move(snk, models.UP):
                 return models.UP
             elif board.can_move(snk, models.RIGHT):
@@ -218,7 +215,6 @@ class LoopPlan(Plan):
 
 
 class SmartSnake:
-
     def __init__(self, data: models.Data):
         pass
 
@@ -227,7 +223,6 @@ class SmartSnake:
 
 
 class Looper(SmartSnake):
-
     def __init__(self, data: models.Data, left_column: int = 0):
         self.plan = LoopPlan(left_column)
 
@@ -236,7 +231,6 @@ class Looper(SmartSnake):
 
 
 class InvLooper(SmartSnake):
-
     def __init__(self, data: models.Data, left_column: int = 0):
         self.plan = InvLoopPlan(left_column)
 
@@ -245,27 +239,27 @@ class InvLooper(SmartSnake):
 
 
 class Medusa(BattlesnakeServer):
-
     def __init__(self):
-        self.smart_snakes = {}  #smart_snakes[game_id][snake_id] = snake
+        self.smart_snakes = {}  # smart_snakes[game_id][snake_id] = snake
 
     def handle_index(self):
         return models.BattlesnakeInfo(
-            author='drzoid',
-            color='#8101bc',
-            head='safe',
-            tail='freckled',
-            version='1.0.0',
+            author="drzoid",
+            color="#8101bc",
+            head="safe",
+            tail="freckled",
+            version="1.0.0",
         )
 
-    def get_col_for_snake(self, snakes: List[models.Battlesnake], snake_id: str,
-                          width: int):
+    def get_col_for_snake(
+        self, snakes: List[models.Battlesnake], snake_id: str, width: int
+    ):
         left_to_right = list(snakes)
         left_to_right.sort(key=lambda snk: snk.head.x)
         for i, snk in enumerate(left_to_right):
             if snk.id == snake_id:
                 return width * i
-        raise ValueError('Could not find snake with snake_id')
+        raise ValueError("Could not find snake with snake_id")
 
     def split_snakes(self, data: models.Data, width: int):
         max_per_side = math.floor(data.board.width / width)
@@ -276,7 +270,7 @@ class Medusa(BattlesnakeServer):
             bottom_to_top = list(data.board.snakes)
             bottom_to_top.sort(key=lambda snk: snk.head.y)
             top = bottom_to_top[-max_per_side::]
-            bottom = bottom_to_top[0:len(bottom_to_top) - len(top)]
+            bottom = bottom_to_top[0 : len(bottom_to_top) - len(top)]
             return top, bottom
 
     def get_snake_zone(self, data: models.Data, snake_id: str, width: int):
@@ -295,7 +289,7 @@ class Medusa(BattlesnakeServer):
         if game_id not in self.smart_snakes:
             self.smart_snakes[game_id] = {}
         if snake_id not in self.smart_snakes[game_id]:
-            print('Made new smart snake')
+            print("Made new smart snake")
             is_top, col = self.get_snake_zone(data, snake_id, 2)
             runner = None
             if is_top:
@@ -305,19 +299,19 @@ class Medusa(BattlesnakeServer):
             self.smart_snakes[game_id][snake_id] = runner
         return self.smart_snakes[game_id][snake_id]
 
-    def handle_start(self, data:models.Data):
+    def handle_start(self, data: models.Data):
         _ = self.get_or_make_smart_snake(data, data.you.id)
 
-        print('START')
-        print(f'Timeout: {data.game.timeout}ms')
+        print("START")
+        print(f"Timeout: {data.game.timeout}ms")
 
-        return 'ok'
+        return "ok"
 
-    def handle_move(self, data:models.Data) -> models.Direction:
+    def handle_move(self, data: models.Data) -> models.Direction:
         data = models.Data(cherrypy.request.json)
 
         snake = self.get_or_make_smart_snake(data, data.you.id)
         direction = snake.move(data)
 
-        print(f'MOVE: {direction}')
+        print(f"MOVE: {direction}")
         return direction

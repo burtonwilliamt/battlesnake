@@ -15,7 +15,6 @@ def pack_to_bits(*args, bits=8) -> int:
 
 
 class Result:
-
     def __init__(self, sim: Simulation):
         self.healths = list(sim.healths)
         self.num_dead = 0
@@ -23,9 +22,7 @@ class Result:
             if health == 0:
                 self.num_dead += 1
         self.lengths = [len(sim.bodies[snk_id]) for snk_id in sim.snake_ids]
-        self.turns_alive = {
-            snk_id: sim.turns_alive(snk_id) for snk_id in sim.snake_ids
-        }
+        self.turns_alive = {snk_id: sim.turns_alive(snk_id) for snk_id in sim.snake_ids}
 
         self.sim_render = None
         if config.DEBUG:
@@ -51,13 +48,14 @@ class Result:
         if not isinstance(other, Result):
             return False
 
-        return (self.healths == other.healths and
-                self.num_dead == other.num_dead and
-                self.lengths == other.lengths)
+        return (
+            self.healths == other.healths
+            and self.num_dead == other.num_dead
+            and self.lengths == other.lengths
+        )
 
 
 class DecisionNode:
-
     def get_result(self) -> Result:
         raise NotImplementedError
 
@@ -66,7 +64,6 @@ class DecisionNode:
 
 
 class LeafNode(DecisionNode):
-
     ResultType = Result
 
     def __init__(self, sim: Simulation):
@@ -77,7 +74,6 @@ class LeafNode(DecisionNode):
 
 
 class SnakeDecision(DecisionNode):
-
     LeafNodeType = LeafNode
 
     def __init__(self, *, best_result, best_direction):
@@ -101,8 +97,9 @@ class SnakeDecision(DecisionNode):
         return node
 
     @classmethod
-    def _process_snk_id_at_depth(cls, sim: Simulation, snk_id: int,
-                                 depth: int) -> DecisionNode:
+    def _process_snk_id_at_depth(
+        cls, sim: Simulation, snk_id: int, depth: int
+    ) -> DecisionNode:
         # Base condition, if we did all the snakes then do a turn.
         if snk_id >= len(sim.snake_ids):
             return cls._process_turn(sim, depth - 1)
